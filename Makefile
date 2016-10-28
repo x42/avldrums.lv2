@@ -241,7 +241,7 @@ FLUID_SRC = \
             fluidsynth/src/fluid_settings.c \
             fluidsynth/src/fluid_sys.c
 
-CPPFLAGS = -Ifluidsynth -DHAVE_CONFIG_H -D DEFAULT_SOUNDFONT=\"\"
+CPPFLAGS = -Ifluidsynth -I fluidsynth/fluidsynth -DHAVE_CONFIG_H -D DEFAULT_SOUNDFONT=\"\"
 DSP_SRC  = src/$(LV2NAME).c $(FLUID_SRC)
 DSP_DEPS = $(DSP_SRC) src/$(LV2NAME).h
 GUI_DEPS = gui/$(LV2NAME).c src/$(LV2NAME).h
