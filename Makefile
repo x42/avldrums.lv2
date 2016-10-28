@@ -151,7 +151,7 @@ override CFLAGS += -fPIC -fvisibility=hidden
 else
 override CFLAGS += -DPTW32_STATIC_LIB
 endif
-override LOADLIBES += `pkg-config --libs lv2 glib-2.0`
+override LOADLIBES += `pkg-config $(PKG_UI_FLAGS) --libs glib-2.0`
 
 
 GLUICFLAGS+=`pkg-config --cflags cairo pango` $(CFLAGS)
