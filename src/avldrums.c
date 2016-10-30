@@ -510,11 +510,17 @@ mn_model (LV2_Handle instance)
 	return rv;
 }
 
+static void
+mn_free (char* v)
+{
+	free (v);
+}
+
 static const void*
 extension_data (const char* uri)
 {
 	static const LV2_Worker_Interface worker = { work, work_response, NULL };
-	static const LV2_Midnam_Interface midnam = { mn_file, mn_model, NULL };
+	static const LV2_Midnam_Interface midnam = { mn_file, mn_model, mn_free };
 	if (!strcmp (uri, LV2_WORKER__interface)) {
 		return &worker;
 	}

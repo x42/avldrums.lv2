@@ -110,6 +110,10 @@ ifeq ($(shell pkg-config --atleast-version=1.6.0 lv2 || echo no), no)
   $(error "LV2 SDK needs to be version 1.6.0 or later")
 endif
 
+ifeq ($(shell pkg-config --exists glib-2.0 || echo no), no)
+  $(error "glib-2.0 was not found.")
+endif
+
 ifneq ($(BUILDOPENGL), no)
  ifeq ($(shell pkg-config --exists pango cairo $(PKG_GL_LIBS) || echo no), no)
   $(error "This plugin requires cairo pango $(PKG_GL_LIBS)")
