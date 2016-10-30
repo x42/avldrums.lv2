@@ -213,7 +213,7 @@ ifneq ($(BUILDOPENGL), no)
 endif
 
 $(BUILDDIR)%.sf2:
-	cp -v sf2/$(*F).sf2 $@ 
+	cp -v sf2/$(*F).sf2 $@
 
 FLUID_SRC = \
             fluidsynth/src/fluid_midi.c \
@@ -243,7 +243,7 @@ FLUID_SRC = \
 
 CPPFLAGS = -Ifluidsynth -I fluidsynth/fluidsynth -DHAVE_CONFIG_H -D DEFAULT_SOUNDFONT=\"\"
 DSP_SRC  = src/$(LV2NAME).c $(FLUID_SRC)
-DSP_DEPS = $(DSP_SRC) src/$(LV2NAME).h
+DSP_DEPS = $(DSP_SRC) src/$(LV2NAME).h src/midnam.h
 GUI_DEPS = gui/$(LV2NAME).c src/$(LV2NAME).h
 
 $(BUILDDIR)$(LV2NAME)$(LIB_EXT): $(DSP_DEPS) Makefile

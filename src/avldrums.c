@@ -31,6 +31,8 @@
 #include <lv2/lv2plug.in/ns/ext/log/logger.h>
 #include <lv2/lv2plug.in/ns/ext/worker/worker.h>
 
+#include "midnam_lv2.h"
+
 #include "fluidsynth.h"
 #include "avldrums.h"
 
@@ -65,6 +67,7 @@ typedef struct {
 	LV2_Log_Log*         log;
 	LV2_Log_Logger       logger;
   LV2_Worker_Schedule* schedule;
+	LV2_Midnam*          midnam;
 	LV2_Atom_Forge       forge;
 	LV2_Atom_Forge_Frame frame;
 
@@ -193,6 +196,8 @@ instantiate (const LV2_Descriptor*     descriptor,
 			self->log = (LV2_Log_Log*)features[i]->data;
 		} else if (!strcmp (features[i]->URI, LV2_WORKER__schedule)) {
 			self->schedule = (LV2_Worker_Schedule*)features[i]->data;
+		} else if (!strcmp (features[i]->URI, LV2_MIDNAM__update)) {
+			self->midnam = (LV2_Midnam*)features[i]->data;
 		}
 	}
 
@@ -210,7 +215,7 @@ instantiate (const LV2_Descriptor*     descriptor,
 		return NULL;
 	}
 
-	snprintf (self->queue_sf2_file_path, sizeof (self->queue_sf2_file_path), "%s" PATH_SEP "%s", 
+	snprintf (self->queue_sf2_file_path, sizeof (self->queue_sf2_file_path), "%s" PATH_SEP "%s",
 			bundle_path, kits[kit]);
 	self->queue_sf2_file_path[sizeof(self->queue_sf2_file_path) - 1] = '\0';
 	
@@ -366,6 +371,7 @@ run (LV2_Handle instance, uint32_t n_samples)
 
 			const uint8_t* const data = (const uint8_t*)(ev + 1);
 			fluid_midi_event_set_type (self->fmidi_event, data[0] & 0xf0);
+			// TODO: consider loading kit to all channels
 			fluid_midi_event_set_channel (self->fmidi_event, 0 /* data[0] & 0x0f*/);
 
 			if (fluid_midi_event_get_type(self->fmidi_event) == 0xc0 /*PROGRAM_CHANGE*/) {
@@ -480,12 +486,40 @@ work_response (LV2_Handle  instance,
 	return LV2_WORKER_SUCCESS;
 }
 
+static char*
+mn_file (LV2_Handle instance)
+{
+#include "midnam.h"
+	AVLSynth* self = (AVLSynth*)instance;
+	char* mn = strdup (AVL_Drumkits_midnam);
+	char inst[13];
+	snprintf (inst, 12, "%p", self);
+	memcpy (&mn[0x142], inst, strlen(inst));
+	return mn;
+}
+
+static char*
+mn_model (LV2_Handle instance)
+{
+	AVLSynth* self = (AVLSynth*)instance;
+	char inst[13];
+	char* rv = malloc (13 * sizeof (char));
+	sprintf (rv, "AVL-Drumkits");
+	snprintf (inst, 12, "%p", self);
+	memcpy (rv, inst, strlen(inst));
+	return rv;
+}
+
 static const void*
 extension_data (const char* uri)
 {
 	static const LV2_Worker_Interface worker = { work, work_response, NULL };
+	static const LV2_Midnam_Interface midnam = { mn_file, mn_model, NULL };
 	if (!strcmp (uri, LV2_WORKER__interface)) {
 		return &worker;
+	}
+	if (!strcmp (uri, LV2_MIDNAM__interface)) {
+		return &midnam;
 	}
 	return NULL;
 }
