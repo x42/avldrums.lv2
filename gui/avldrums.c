@@ -16,6 +16,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
+//#define DEVELOP // dump areas
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,7 +39,7 @@
 #endif
 
 enum Kit {
-	BlackPearl = 0,
+	BlackPearl = 1,
 	RedZeppelin
 };
 
@@ -74,6 +75,46 @@ static const char* drumnames [DRUM_PCS] = {
 	"Maracas"
 };
 
+struct kGeometry {
+	double cx, cy;
+	double dx, dy;
+	bool rect; // false: ellipse, true: rectangle
+	bool rim;
+	uint32_t z_index;
+};
+
+struct kGeometry drumpos [DRUM_PCS] = {
+	{ 0.485000, 0.660000, 0.096250, 0.075000, false, false,  0}, // Kick
+	{ 0.330000, 0.747500, 0.080000, 0.172500, false,  true,  0}, // Snare Side
+	{ 0.325000, 0.740000, 0.058750, 0.102500, false, false, 10}, // Snare
+	{ 0, 0, 0, 0, true, false, 0 },
+	{ 0.325000, 0.740000, 0.076250, 0.155000, false,  true,  5}, // Snare Rim 
+	{ 0.675000, 0.797500, 0.066250, 0.107500, false, false, 10}, // Floor Tom (center)
+	{ 0.164374, 0.705640, 0.094911, 0.162310, false, false,  5}, // Hi Hat
+	{ 0.671250, 0.807500, 0.100000, 0.195000, false,  true,  0}, // Floor Tom (edge)
+	{ 0.164374, 0.705640, 0.094911, 0.162310, false, false,  0}, // Hi Hat
+	{ 0.311250, 0.372500, 0.040000, 0.080000, false,  true,  5}, // Tom (center)
+	{ 0.164374, 0.705640, 0.094911, 0.162310, false, false,  0}, // Hi Hat
+	{ 0.310000, 0.372500, 0.072500, 0.150000, false,  true,  0}, // Tom
+	{ 0.164374, 0.705640, 0.094911, 0.162310, false, false,  0}, // Hi Hat
+	{ 0.640288, 0.473022, 0.093525, 0.178058, false, false,  5}, // Cymb right 1 (below 2,3)
+	{ 0.642500, 0.475000, 0.123750, 0.227500, false,  true,  0}, // Cymb right 1 (below 2,3)
+	{ 0.142500, 0.325000, 0.101250, 0.172500, false, false, 15}, // Ride
+	{ 0.147180, 0.332875, 0.125860, 0.211830, false,  true, 10}, // Ride (edge)
+	{ 0.145000, 0.310000, 0.041250, 0.070000, false, false, 20}, // Ride (bell)
+	{ 0.144429, 0.660248, 0.050894, 0.093536, false,  true, 20}, // Tambourine (above HH)
+	{ 0.317744, 0.107290, 0.059147, 0.101788, false, false,  0}, // Splash
+	{ 0.501250, 0.580000, 0.022500, 0.057500, true , false, 20}, // Cowbell
+	{ 0.914568, 0.685252, 0.108813, 0.170863, false, false, 25}, // Cymb right 3
+	{ 0.911279, 0.693260, 0.132737, 0.211830, false,  true, 20}, // Cymb right 3
+	{ 0.184353, 0.438849, 0.044964, 0.084532, false,  true, 25}, // Ride (shank)
+	{ 0.843879, 0.434663, 0.140303, 0.222834, false, false, 10}, // Cymb right 2 (below 3)
+	{ 0, 0, 0, 0, true, false, 0},
+	{ 0, 0, 0, 0, true, false, 0},
+	{ 0, 0, 0, 0, true, false, 0},
+	{ 0, 0, 0, 0, true, false, 0},
+};
+
 typedef struct {
 	RobWidget *rw;
 
@@ -87,6 +128,7 @@ typedef struct {
 
 	int width, height;
 	float scale;
+	bool size_changed;
 
 	enum Kit kit;
 	const char* nfo;
@@ -96,8 +138,37 @@ typedef struct {
 	float   kit_anim[DRUM_PCS];
 	uint8_t kit_velo[DRUM_PCS];
 
+	cairo_surface_t* bg;
+	cairo_surface_t* bg_scaled;
+
+
+	size_t png_readoff;
 	int note;
+
+#ifdef DEVELOP
+	double _xc, _yc;
+	double _xd, _yd;
+	bool   _tt;
+#endif
 } AvlDrumsLV2UI;
+
+/******************************************************************************
+ * texture
+ */
+
+static cairo_status_t
+red_png_read (void* c, unsigned char* d, unsigned int s)
+{
+#include  "gui/red_zeppelin.png.h"
+	AvlDrumsLV2UI* ui = (AvlDrumsLV2UI*)c;
+	if (s + ui->png_readoff > sizeof (RedZeppelinPng)) {
+		return CAIRO_STATUS_READ_ERROR;
+	}
+	memcpy (d, &RedZeppelinPng[ui->png_readoff], s);
+	ui->png_readoff += s;
+	return CAIRO_STATUS_SUCCESS;
+}
+
 
 /******************************************************************************
  * LV2 messaging
@@ -142,24 +213,72 @@ forge_note (AvlDrumsLV2UI* ui, uint8_t note, uint8_t vel)
 /******************************************************************************
  * Drawing
  */
+
+#define SW(X) (ui->width * (X))
+#define SH(Y) (ui->height * (Y))
+
+#define RIM SW (.006)
+
+static void
+queue_drum_expose (AvlDrumsLV2UI* ui, uint32_t d)
+{
+	assert (d < DRUM_PCS);
+	struct kGeometry* g = &drumpos[d];
+	queue_draw_area (ui->rw,
+			SW (g->cx - g->dx) - 1, SH (g->cy - g->dy) -1,
+			SW (2 * g->dx) + 2, SH (2 * g->dy) + 2);
+}
+
 static bool
-animation_counters (AvlDrumsLV2UI* ui) {
-	const float dt = 1/25.f;
+animation_counters (AvlDrumsLV2UI* ui)
+{
+	const float dt = 1/15.f;
 	bool active = false;
 	for (int i = 0; i < DRUM_PCS; ++i) {
 		if (ui->kit_anim[i] > dt) {
 			ui->kit_anim[i] -= dt;
 			active = true;
+			queue_drum_expose (ui, i);
 		}
 		else if (ui->kit_anim[i] > 0) {
 			ui->kit_anim[i] = 0;
 			active = true;
+			queue_drum_expose (ui, i);
 		}
 		else {
 			ui->kit_anim[i] = 0;
 		}
 	}
 	return active;
+}
+
+static void
+drum_path (AvlDrumsLV2UI* ui, cairo_t* cr, struct kGeometry* g)
+{
+	if (g->rect) {
+		if (g->rim) {
+			cairo_rectangle (cr,
+					SW (g->cx - g->dx) + RIM, SH (g->cy - g->dy) + RIM,
+					SW (2 * g->dx) - 2 * RIM, SH (2 * g->dy) - 2 * RIM);
+		} else {
+			cairo_rectangle (cr,
+					SW (g->cx - g->dx), SH (g->cy - g->dy),
+					SW (2 * g->dx), SH (2 * g->dy));
+		}
+	} else {
+		cairo_matrix_t save_matrix;
+		cairo_get_matrix(cr, &save_matrix);
+		cairo_translate(cr, SW (g->cx), SH (g->cy));
+		cairo_scale(cr, 1.0, SH (g->dy) / SW (g->dx));
+		cairo_translate(cr, SW (-g->cx), SH (-g->cy));
+		cairo_new_path(cr);
+		if (g->rim) {
+			cairo_arc (cr, SW (g->cx), SH (g->cy), SW (g->dx) - RIM, 0, 2 * M_PI);
+		} else {
+			cairo_arc (cr, SW (g->cx), SH (g->cy), SW (g->dx), 0, 2 * M_PI);
+		}
+		cairo_set_matrix(cr, &save_matrix);
+	}
 }
 
 static bool
@@ -171,54 +290,162 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
 	CairoSetSouerceRGBA(c_trs);
 	cairo_fill (cr);
 
-	for (int i = 0; i < DRUM_PCS; ++i) {
-		// TODO note to area
-		int col = i % 6;
-		int row = i / 6; // 0.. 5
-		const int ww = ui->width / 6;
-		const int hh = ui->height / 5;
+	if (ui->size_changed) {
+		float scale = ui->width / (float) cairo_image_surface_get_width (ui->bg);
+		if (ui->bg_scaled) {
+			cairo_surface_destroy (ui->bg_scaled);
+		}
+		ui->bg_scaled = cairo_image_surface_create (CAIRO_FORMAT_RGB24, ui->width, ui->height);
+		cairo_t* icr = cairo_create (ui->bg_scaled);
+		cairo_scale (icr, scale, scale);
+		cairo_set_source_surface (icr, ui->bg, 0, 0);
+		cairo_paint (icr);
+		cairo_destroy (icr);
+		ui->size_changed = false;
+	}
 
-		cairo_rectangle (cr, col * ww, row * hh, ww, hh);
+	cairo_set_source_surface (cr, ui->bg_scaled, 0, 0);
+	cairo_paint (cr);
+
+	// TODO !ui->kit_ready -> shade
+
+	for (int i = 0; i < DRUM_PCS; ++i) {
 		if (ui->kit_anim[i] > 0) {
+			drum_path (ui, cr, &drumpos[i]);
 			const double br = .2 + .8 * ui->kit_anim[i];
 			const double bg = .2 + .8 * ui->kit_anim[i] * (1.f - ui->kit_velo[i] / 127.f);
-			cairo_set_source_rgba (cr, br, bg, .2, 1);
-		} else {
-			cairo_set_source_rgba (cr, .2, .2, .2, 1);
+			cairo_set_source_rgba (cr, br, bg, .2, .5 * ui->kit_anim[i]);
+			if (drumpos[i].rim) {
+				cairo_set_line_width (cr, 2 * RIM);
+				cairo_stroke (cr);
+			} else {
+				cairo_fill (cr);
+			}
 		}
-		cairo_fill_preserve (cr);
-		cairo_set_source_rgba (cr, .7, .7, .7, 1);
-		cairo_stroke (cr);
+#if 0
 		write_text_full (cr, drumnames[i], ui->font,
-				(col + .5) * ww, (row  + .5) * hh,
+				SW (drumpos[i].cx), SH (drumpos[i].cy),
 				0, 2, c_wht);
+#endif
 	}
 
-	if (animation_counters (ui)) {
-		queue_draw (ui->rw);
+	animation_counters (ui);
+
+#ifdef DEVELOP
+	if (ui->note >= 0 && ui->_yd > 0 && ui->_xd > 0) {
+		if (ui->_tt) {
+			cairo_rectangle (cr,
+					SW (ui->_xc - ui->_xd), SH (ui->_yc - ui->_yd),
+					SW (2 * ui->_xd), SH (2 * ui->_yd));
+		} else {
+			cairo_matrix_t save_matrix;
+			cairo_get_matrix(cr, &save_matrix);
+			cairo_translate(cr, SW (ui->_xc), SH (ui->_yc));
+			cairo_scale(cr, 1.0, SH (ui->_yd) / SW (ui->_xd));
+			cairo_translate(cr, SW (-ui->_xc), SH (-ui->_yc));
+			cairo_arc (cr, SW (ui->_xc), SH (ui->_yc), SW (ui->_xd), 0, 2 * M_PI);
+			cairo_set_matrix(cr, &save_matrix);
+		}
+		cairo_set_source_rgba (cr, .7, .7, .0, .5);
+		cairo_fill (cr);
 	}
+#endif
+
+#if 0 // VISUALIZE EXPOSE AREA
+  float c[4];
+	c[0] = rand() / (float)RAND_MAX;
+	c[1] = rand() / (float)RAND_MAX;
+	c[2] = rand() / (float)RAND_MAX;
+	c[3] = 1.0;
+  cairo_set_source_rgba (cr, c[0], c[1], c[2], 0.3);
+  cairo_rectangle (cr, ev->x, ev->y, ev->width, ev->height);
+  cairo_fill(cr);
+#endif
 	return TRUE;
-
 }
+
+#undef SW
+#undef SH
 
 /******************************************************************************
  * UI event handling
  */
 
+static float
+event_inside (AvlDrumsLV2UI* ui, struct kGeometry* g, double xx, double yy, uint32_t minz)
+{
+	if (g->rect) {
+		if (g->cx - g->dx < xx && xx < g->cx + g->dx && g->cy - g->dy < yy && yy < g->cy + g->dy) {
+			if (g->z_index >= minz) {
+				return 1;
+			}
+		}
+	} else {
+		if (g->dx == 0 || g->dy == 0) { return 0; }
+
+#define SQ(X) ((X) * (X))
+		const double d = SQ(xx - g->cx) / SQ(g->dx) + SQ(yy - g->cy) / SQ(g->dy);
+		if (d < 1 && g->z_index >= minz) { return 1; }
+#undef SQ
+	}
+	return 0;
+}
+
+#ifdef DEVELOP
+static RobWidget*
+mousemove (RobWidget* handle, RobTkBtnEvent *ev)
+{
+	AvlDrumsLV2UI* ui = (AvlDrumsLV2UI*)GET_HANDLE (handle);
+	if (ui->note < 0) {
+		return NULL;
+	}
+	double xp = ev->x / (double) ui->width;
+	double yp = ev->y / (double) ui->height;
+	ui->_xd = fabs (xp - ui->_xc);
+	ui->_yd = fabs (yp - ui->_yc);
+	printf ("{ %f, %f, %f, %f, %5s, false,  0 },\n",
+			ui->_xc, ui->_yc, ui->_xd, ui->_yd, ui->_tt ? "true" : "false");
+	queue_draw (ui->rw);
+	return handle;
+}
+#endif
+
 static RobWidget*
 mousedown (RobWidget* handle, RobTkBtnEvent *ev)
 {
 	AvlDrumsLV2UI* ui = (AvlDrumsLV2UI*)GET_HANDLE (handle);
-	// TODO area to note
-	const int ww = ui->width / 6;
-	const int hh = ui->height / 5;
-	int col = ev->x / ww;
-	int row = ev->y / hh;
+#ifdef DEVELOP
+	ui->_xc = ev->x / (double) ui->width;
+	ui->_yc = ev->y / (double) ui->height;
+	ui->_xd = 0;
+	ui->_yd = 0;
+	ui->_tt = ev->button == 1 ? false : true;
+	printf ("{ %f, %f, %f, %f, %5s, false,  0 },\n",
+			ui->_xc, ui->_yc, ui->_xd, ui->_yd, ui->_tt ? "true" : "false");
+	queue_draw (ui->rw);
+#endif
 
-	int n = row * 6 + col;
-	if (n >= 0 && n < DRUM_PCS) {
+	if (!ui->kit_ready) {
+		return NULL;
+	}
+
+	double xx = ev->x / (double) ui->width;
+	double yy = ev->y / (double) ui->height;
+
+	int n = -1;
+	uint32_t minz = 0;
+	float vel = 0;
+	for (int i = 0; i < DRUM_PCS; ++i) {
+		float v;
+		if (0 < (v = event_inside (ui, &drumpos[i], xx, yy, minz))) {
+			minz = drumpos[i].z_index;
+			n = i;
+			vel = v;
+		}
+	}
+	if (n >= 0) {
 		ui->note = n + 36;
-		forge_note (ui, ui->note, 0x7f);
+		forge_note (ui, ui->note, 0x7f); // TODO velocity
 	}
 	return handle;
 }
@@ -227,19 +454,21 @@ static RobWidget*
 mouseup (RobWidget* handle, RobTkBtnEvent *event)
 {
 	AvlDrumsLV2UI* ui = (AvlDrumsLV2UI*)GET_HANDLE (handle);
-	queue_draw (ui->rw);
 	if (ui->note >= 0) {
 		forge_note (ui, ui->note, 0);
 	}
 	ui->note = -1;
+#ifdef DEVELOP
+	queue_draw (ui->rw);
+#endif
 	return NULL;
 }
 
 static void
 size_request (RobWidget* rw, int *w, int *h)
 {
-	*w = 600;
-	*h = 500;
+	*w = 800;
+	*h = 400;
 }
 
 static void
@@ -257,12 +486,14 @@ size_limit (RobWidget* rw, int *w, int *h)
 	robwidget_set_size(rw, ui->width, ui->height); // single top-level
 	*w = ui->width;
 	*h = ui->height;
+	ui->size_changed = true;
 	queue_draw (rw);
 }
 
 static void
 size_allocate (RobWidget* rw, int w, int h)
 {
+	AvlDrumsLV2UI* ui = (AvlDrumsLV2UI*)GET_HANDLE (rw);
 	int ww = w;
 	int wh = h;
 	size_limit (rw, &ww, &wh);
@@ -332,6 +563,8 @@ instantiate (
 	ui->nfo        = robtk_info (ui_toplevel);
 	ui->note       = -1;
 	ui->kit_ready  = false;
+	ui->png_readoff = 0;
+	ui->size_changed = true;
 
 	for (int i = 0; i < DRUM_PCS; ++i) {
 		ui->kit_anim[i] = 0;
@@ -355,6 +588,11 @@ instantiate (
 	robwidget_set_size_default (ui->rw, size_request);
 	robwidget_set_mouseup (ui->rw, mouseup);
 	robwidget_set_mousedown (ui->rw, mousedown);
+#ifdef DEVELOP
+	robwidget_set_mousemove (ui->rw, mousemove);
+#endif
+
+	ui->bg = cairo_image_surface_create_from_png_stream (red_png_read, ui);
 
 	*widget = ui->rw;
 	return ui;
@@ -371,6 +609,10 @@ cleanup (LV2UI_Handle handle)
 {
 	AvlDrumsLV2UI* ui = (AvlDrumsLV2UI*)handle;
 	robwidget_destroy (ui->rw);
+	cairo_surface_destroy (ui->bg);
+	if (ui->bg_scaled) {
+		cairo_surface_destroy (ui->bg_scaled);
+	}
 	pango_font_description_free(ui->font);
 	free (ui);
 }
@@ -420,16 +662,12 @@ port_event (
 
 					if (ui->kit_ready) {
 						/* set/start animation */
-						bool redraw = false;
 						for (int i = 0; i < DRUM_PCS; ++i) {
 							if (data[i] > 0) {
 								ui->kit_anim [i] = 1.0;
 								ui->kit_velo [i] = data[i];
-								redraw = 1;
+								queue_drum_expose (ui, i);
 							}
-						}
-						if (redraw) {
-							queue_draw (ui->rw);
 						}
 					} /* kit ready */
 				}
