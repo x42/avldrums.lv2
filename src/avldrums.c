@@ -355,8 +355,12 @@ run (LV2_Handle instance, uint32_t n_samples)
 			}
 		}
 		else if (ev->body.type == self->uris.midi_MidiEvent && self->initialized && !self->reinit_in_progress) {
-			if (ev->body.size > 3 || ev->time.frames >= n_samples) {
+			if (ev->body.size > 3 || ev->time.frames > n_samples) { // XXX should be >= n_samples
 				continue;
+			}
+			// work-around jalv sending GUI -> DSP messages @ n_samples
+			if (ev->time.frames == n_samples) {
+				ev->time.frames = n_samples -1;
 			}
 
 			if (ev->time.frames > offset) {
