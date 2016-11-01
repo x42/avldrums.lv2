@@ -53,7 +53,6 @@ typedef struct {
   LV2_Atom_Sequence*       notify;
 
 	float* p_ports[AVL_PORT_LAST];
-	float  v_ports[AVL_PORT_LAST];
 
 	/* fluid synth */
 	fluid_settings_t* settings;
@@ -74,6 +73,7 @@ typedef struct {
 	/* state */
 	bool panic;
 	bool initialized;
+	bool multi_out;
 	bool inform_ui;
 	bool ui_active;
 
@@ -104,19 +104,109 @@ load_sf2 (AVLSynth* self, const char* fn)
 		return false;
 	}
 
-	int chn;
+	int chn = 0;
 	fluid_preset_t preset;
 	sfont->iteration_start (sfont);
-	for (chn = 0; sfont->iteration_next (sfont, &preset) && chn < 16; ++chn) {
-		fluid_synth_program_select (self->synth, chn, synth_id,
-				preset.get_banknum (&preset), preset.get_num (&preset));
+	if (sfont->iteration_next (sfont, &preset)) {
+		for (chn = 0; chn < 16; ++chn) {
+			fluid_synth_program_select (self->synth, chn, synth_id,
+					preset.get_banknum (&preset), preset.get_num (&preset));
+		}
 	}
 
 	if (chn == 0) {
 		return false;
 	}
 
+	if (self->multi_out) {
+		/* pan mono outs hard left */
+		fluid_midi_event_set_value (self->fmidi_event, 0);
+
+		for (uint8_t chn = 0; chn < 5; ++chn) {
+			fluid_midi_event_set_type (self->fmidi_event, 0xb0 | chn);
+			fluid_midi_event_set_key (self->fmidi_event, 0x0a);
+			fluid_synth_handle_midi_event (self->synth, self->fmidi_event);
+
+			fluid_midi_event_set_type (self->fmidi_event, 0xb0 | chn);
+			fluid_midi_event_set_key (self->fmidi_event, 0x2a);
+			fluid_synth_handle_midi_event (self->synth, self->fmidi_event);
+		}
+	}
+
 	return true;
+}
+
+static void
+synth_sound (AVLSynth* self, uint32_t n_samples, uint32_t offset)
+{
+	if (self->multi_out) {
+		while (n_samples > 0) {
+			uint32_t n = n_samples > 8192 ? 8192 : n_samples;
+			float scratch[8192];
+			float* l[7];
+			float* r[7];
+
+			l[0] = &self->p_ports[AVL_PORT_OUT_Kick][offset];
+			r[0] = scratch;
+			l[1] = &self->p_ports[AVL_PORT_OUT_Snare][offset];
+			r[1] = scratch;
+			l[2] = &self->p_ports[AVL_PORT_OUT_HiHat][offset];
+			r[2] = scratch;
+			l[3] = &self->p_ports[AVL_PORT_OUT_Tom][offset];
+			r[3] = scratch;
+			l[4] = &self->p_ports[AVL_PORT_OUT_FloorTom][offset];
+			r[4] = scratch;
+			l[5] = &self->p_ports[AVL_PORT_OUT_Overheads_L][offset];
+			r[5] = &self->p_ports[AVL_PORT_OUT_Overheads_R][offset];
+			l[6] = &self->p_ports[AVL_PORT_OUT_Percussion_L][offset];
+			r[6] = &self->p_ports[AVL_PORT_OUT_Percussion_R][offset];
+
+			fluid_synth_nwrite_float (self->synth, n, l, r, NULL, NULL);
+			n_samples -= n;
+			offset += n;
+		}
+	}  else {
+		fluid_synth_write_float (
+				self->synth,
+				n_samples,
+				&self->p_ports[AVL_PORT_OUT_L][offset], 0, 1,
+				&self->p_ports[AVL_PORT_OUT_R][offset], 0, 1);
+	}
+}
+
+static uint8_t
+assign_channel (uint8_t note)
+{
+	switch (note) {
+		case 36:
+			return 0; // Kick
+		case 37:
+		case 38:
+		case 40:
+			return 1; // Snare
+		case 42:
+		case 44:
+		case 46:
+		case 48:
+			return 2; // HiHat
+		case 45:
+		case 47:
+			return 3; // Tom
+		case 41:
+		case 43:
+			return 4; // Floor Tom
+		case 39: // Hand Clap
+		case 54: // Tambourine
+		case 56: // Cowbell
+		case 61: // Roto High
+		case 62: // Mid Roto
+		case 63: // Low Roto
+		case 64: // Maracas
+			return 6; // Percussions etc
+		default:
+			break;
+	}
+	return 5; // Overheads
 }
 
 static void
@@ -139,14 +229,6 @@ kick_ui (AVLSynth* self, int* n)
 	lv2_atom_forge_property_head (&self->forge, self->uris.drumhits, 0);
 	lv2_atom_forge_vector (&self->forge, sizeof(int32_t), self->uris.atom_Int, DRUM_PCS, n);
 	lv2_atom_forge_pop (&self->forge, &frame);
-}
-
-static float
-db_to_coeff (float db)
-{
-	if (db <= -80) { return 0; }
-	else if (db >=  20) { return 10; }
-	return powf (10.f, .05f * db);
 }
 
 static int file_exists (const char *filename) {
@@ -174,11 +256,16 @@ instantiate (const LV2_Descriptor*     descriptor,
 	};
 
 	int kit = -1;
+	bool multi_out = false;
+
 	if (!strcmp (descriptor->URI, AVL_URI "BlackPearl")) {
 		kit = 0;
-	}
-	else if (!strcmp (descriptor->URI, AVL_URI "RedZeppelin")) {
+	} else if (!strcmp (descriptor->URI, AVL_URI "BlackPearlMulti")) {
+		kit = 0; multi_out = true;
+	} else if (!strcmp (descriptor->URI, AVL_URI "RedZeppelin")) {
 		kit = 1;
+	} else if (!strcmp (descriptor->URI, AVL_URI "RedZeppelinMulti")) {
+		kit = 1; multi_out = true;
 	}
 
 	AVLSynth* self = (AVLSynth*)calloc (1, sizeof (AVLSynth));
@@ -238,6 +325,15 @@ instantiate (const LV2_Descriptor*     descriptor,
 	fluid_settings_setint (self->settings, "synth.parallel-render", 1);
 	fluid_settings_setint (self->settings, "synth.threadsafe-api", 0);
 
+	if (multi_out) {
+		self->multi_out = true;
+		fluid_settings_setint (self->settings, "synth.audio-channels", 7);
+		fluid_settings_setint (self->settings, "synth.audio-groups", 7);
+	} else {
+		self->multi_out = false;
+		fluid_settings_setint (self->settings, "synth.audio-channels", 1); // stereo pairs
+	}
+
 	self->synth = new_fluid_synth (self->settings);
 
 	if (!self->synth) {
@@ -248,7 +344,7 @@ instantiate (const LV2_Descriptor*     descriptor,
 	}
 
 	fluid_synth_set_gain (self->synth, 1.0f);
-	fluid_synth_set_polyphony (self->synth, 32);
+	fluid_synth_set_polyphony (self->synth, DRUM_PCS);
 	fluid_synth_set_sample_rate (self->synth, (float)rate);
 
 	self->fmidi_event = new_fluid_midi_event ();
@@ -327,16 +423,6 @@ run (LV2_Handle instance, uint32_t n_samples)
 		self->panic = false;
 	}
 
-	if (self->initialized && !self->reinit_in_progress) {
-		// TODO clamp values to ranges
-		if (self->v_ports[AVL_OUT_GAIN] != *self->p_ports[AVL_OUT_GAIN]) {
-			fluid_synth_set_gain (self->synth, db_to_coeff (*self->p_ports[AVL_OUT_GAIN]));
-		}
-		for (uint32_t p = AVL_OUT_GAIN; p < AVL_PORT_LAST; ++p) {
-			self->v_ports[p] = *self->p_ports[p];
-		}
-	}
-
 	uint32_t offset = 0;
 
 	bool hit_event = false;
@@ -355,7 +441,7 @@ run (LV2_Handle instance, uint32_t n_samples)
 			}
 		}
 		else if (ev->body.type == self->uris.midi_MidiEvent && self->initialized && !self->reinit_in_progress) {
-			if (ev->body.size > 3 || ev->time.frames > n_samples) { // XXX should be >= n_samples
+			if (ev->body.size != 3 || ev->time.frames > n_samples) { // XXX should be >= n_samples
 				continue;
 			}
 			// work-around jalv sending GUI -> DSP messages @ n_samples
@@ -364,32 +450,37 @@ run (LV2_Handle instance, uint32_t n_samples)
 			}
 
 			if (ev->time.frames > offset) {
-				fluid_synth_write_float (
-						self->synth,
-						ev->time.frames - offset,
-						&self->p_ports[AVL_PORT_OUT_L][offset], 0, 1,
-						&self->p_ports[AVL_PORT_OUT_R][offset], 0, 1);
+				synth_sound (self, ev->time.frames - offset, offset);
 			}
 
 			offset = ev->time.frames;
 
 			const uint8_t* const data = (const uint8_t*)(ev + 1);
 			fluid_midi_event_set_type (self->fmidi_event, data[0] & 0xf0);
-			// TODO: consider loading kit to all channels
-			fluid_midi_event_set_channel (self->fmidi_event, 0 /* data[0] & 0x0f*/);
 
 			if (fluid_midi_event_get_type(self->fmidi_event) == 0xc0 /*PROGRAM_CHANGE*/) {
 				continue;
 			}
-			if (ev->body.size > 1) {
-				fluid_midi_event_set_key (self->fmidi_event, data[1]);
+
+			if (fluid_midi_event_get_type(self->fmidi_event) == 0xb0 /*CC*/) {
+				switch (data[1]) {
+					case 0x0a: // pan
+					case 0x2a: // pan
+						continue;
+					default:
+						break;
+				}
 			}
-			if (ev->body.size > 2) {
-				fluid_midi_event_set_value (self->fmidi_event, data[2]);
+
+			if ((fluid_midi_event_get_type(self->fmidi_event) & 0xe0) == 0x80 /*NOTE*/) {
+				fluid_midi_event_set_channel (self->fmidi_event, assign_channel (data[1]));
 			}
+
+			fluid_midi_event_set_key (self->fmidi_event, data[1]);
+			fluid_midi_event_set_value (self->fmidi_event, data[2]);
 			fluid_synth_handle_midi_event (self->synth, self->fmidi_event);
 
-			if (ev->body.size == 3 && fluid_midi_event_get_type(self->fmidi_event) == 0x90 /*NOTE_ON*/) {
+			if (fluid_midi_event_get_type(self->fmidi_event) == 0x90 /*NOTE_ON*/) {
 				int dp = data[1] - 36; // base-note
 				if (dp >= 0 && dp < DRUM_PCS) {
 					drum_hits[dp] = data[2];
@@ -417,11 +508,7 @@ run (LV2_Handle instance, uint32_t n_samples)
 	}
 
 	if (n_samples > offset && self->initialized && !self->reinit_in_progress) {
-		fluid_synth_write_float (
-				self->synth,
-				n_samples - offset,
-				&self->p_ports[AVL_PORT_OUT_L][offset], 0, 1,
-				&self->p_ports[AVL_PORT_OUT_R][offset], 0, 1);
+		synth_sound (self, n_samples - offset, offset);
 	}
 }
 
@@ -462,9 +549,8 @@ work (LV2_Handle                  instance,
 		fluid_synth_all_sounds_off (self->synth, -1);
 		self->panic = false;
 		// boostrap synth engine.
-		float l[1024];
-		float r[1024];
-		fluid_synth_write_float (self->synth, 1024, l, 0, 1, r, 0, 1);
+		float b[1024];
+		fluid_synth_write_float (self->synth, 1024, b, 0, 1, b, 0, 1);
 	}
 
 	respond (handle, 1, "");
@@ -547,7 +633,9 @@ static const LV2_Descriptor descriptor ## ID = { \
 };
 
 mkdesc(0, "BlackPearl");
-mkdesc(1, "RedZeppelin");
+mkdesc(1, "BlackPearlMulti");
+mkdesc(2, "RedZeppelin");
+mkdesc(3, "RedZeppelinMulti");
 
 #undef LV2_SYMBOL_EXPORT
 #ifdef _WIN32
@@ -560,10 +648,10 @@ const LV2_Descriptor*
 lv2_descriptor (uint32_t index)
 {
 	switch (index) {
-	case 0:
-		return &descriptor0;
-	case 1:
-		return &descriptor1;
+	case 0: return &descriptor0;
+	case 1: return &descriptor1;
+	case 2: return &descriptor2;
+	case 3: return &descriptor3;
 	default:
 		return NULL;
 	}

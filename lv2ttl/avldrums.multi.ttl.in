@@ -1,0 +1,45 @@
+      a lv2:OutputPort, lv2:AudioPort ;
+      lv2:index 2 ;
+      lv2:symbol "out1" ;
+      lv2:name "Kick" ;
+  ] , [
+      a lv2:OutputPort, lv2:AudioPort ;
+      lv2:index 3 ;
+      lv2:symbol "out2" ;
+      lv2:name "Snare" ;
+  ] , [
+      a lv2:OutputPort, lv2:AudioPort ;
+      lv2:index 4 ;
+      lv2:symbol "out3" ;
+      lv2:name "HiHat" ;
+  ] , [
+      a lv2:OutputPort, lv2:AudioPort ;
+      lv2:index 5 ;
+      lv2:symbol "out4" ;
+      lv2:name "Tom" ;
+  ] , [
+      a lv2:OutputPort, lv2:AudioPort ;
+      lv2:index 6 ;
+      lv2:symbol "out5" ;
+      lv2:name "Floor Tom" ;
+  ] , [
+      a lv2:OutputPort, lv2:AudioPort ;
+      lv2:index 7 ;
+      lv2:symbol "out6" ;
+      lv2:name "Overheads L" ;
+  ] , [
+      a lv2:OutputPort, lv2:AudioPort ;
+      lv2:index 8 ;
+      lv2:symbol "out7" ;
+      lv2:name "Overheads R" ;
+  ] , [
+      a lv2:OutputPort, lv2:AudioPort ;
+      lv2:index 9 ;
+      lv2:symbol "out8" ;
+      lv2:name "Percussions L" ;
+  ] , [
+      a lv2:OutputPort, lv2:AudioPort ;
+      lv2:index 10 ;
+      lv2:symbol "out9" ;
+      lv2:name "Percussions R" ;
+  ] .

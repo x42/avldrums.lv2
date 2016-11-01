@@ -592,8 +592,10 @@ instantiate (
 		return NULL;
 	}
 
-	if      (!strcmp (plugin_uri, RTK_URI "BlackPearl"))  { ui->kit = BlackPearl; }
-	else if (!strcmp (plugin_uri, RTK_URI "RedZeppelin")) { ui->kit = RedZeppelin; }
+	if      (!strcmp (plugin_uri, RTK_URI "BlackPearl"))       { ui->kit = BlackPearl; }
+	else if (!strcmp (plugin_uri, RTK_URI "BlackPearlMulti"))  { ui->kit = BlackPearl; }
+	else if (!strcmp (plugin_uri, RTK_URI "RedZeppelin"))      { ui->kit = RedZeppelin; }
+	else if (!strcmp (plugin_uri, RTK_URI "RedZeppelinMulti")) { ui->kit = RedZeppelin; }
 
 	if (ui->kit == 0) {
 		free (ui);
@@ -728,16 +730,4 @@ port_event (
 			} /* drumhit */
 		} /* atom object */
 	} /* atom message */
-
-	if ( format != 0 || port_index < AVL_OUT_GAIN) {
-		return;
-	}
-
-#if 0
-	ui->disable_signals = true;
-	if (port_index == AVL_OUT_GAIN) {
-		// ...
-	}
-	ui->disable_signals = false;
-#endif
 }

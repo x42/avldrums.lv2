@@ -1,0 +1,7 @@
+
+@LV2NAME@:ui_gl
+	a @UI_TYPE@ ;
+	lv2:requiredFeature ui:idleInterface;
+	lv2:extensionData ui:idleInterface;
+	lv2:requiredFeature urid:map
+	.

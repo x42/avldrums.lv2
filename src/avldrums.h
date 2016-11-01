@@ -57,10 +57,18 @@ typedef enum {
 	AVL_PORT_NOTIFY,
 	AVL_PORT_OUT_L,
 	AVL_PORT_OUT_R,
-	AVL_OUT_GAIN,
+	AVL_PORT_OUT_HiHat,
+	AVL_PORT_OUT_Tom,
+	AVL_PORT_OUT_FloorTom,
+	AVL_PORT_OUT_Overheads_L,
+	AVL_PORT_OUT_Overheads_R,
+	AVL_PORT_OUT_Percussion_L,
+	AVL_PORT_OUT_Percussion_R,
 	AVL_PORT_LAST
 } PortIndex;
 
+#define AVL_PORT_OUT_Kick AVL_PORT_OUT_L
+#define AVL_PORT_OUT_Snare AVL_PORT_OUT_R
 
 static inline void
 map_avldrums_uris (LV2_URID_Map* map, AVLLV2URIs* uris) {
