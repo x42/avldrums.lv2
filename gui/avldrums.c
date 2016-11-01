@@ -546,7 +546,7 @@ size_limit (RobWidget* rw, int *w, int *h)
 static void
 size_allocate (RobWidget* rw, int w, int h)
 {
-	AvlDrumsLV2UI* ui = (AvlDrumsLV2UI*)GET_HANDLE (rw);
+	//AvlDrumsLV2UI* ui = (AvlDrumsLV2UI*)GET_HANDLE (rw);
 	int ww = w;
 	int wh = h;
 	size_limit (rw, &ww, &wh);
@@ -712,8 +712,10 @@ port_event (
 					 ) {
 					LV2_Atom_Vector* voi = (LV2_Atom_Vector*)LV2_ATOM_BODY (a0);
 					assert (voi->atom.type == ui->uris.atom_Int);
+#ifndef NDEBUG
 					const size_t n_elem = (a0->size - sizeof (LV2_Atom_Vector_Body)) / voi->atom.size;
 					assert (n_elem == DRUM_PCS);
+#endif
 					const int32_t* data = (int32_t*) LV2_ATOM_BODY (&voi->atom);
 
 					if (ui->kit_ready) {
