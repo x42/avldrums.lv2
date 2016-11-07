@@ -49,27 +49,27 @@ static const char* drumnames [DRUM_PCS] = {
 	"Snare Ctr.",
 	"Hand Clap",
 	"Snare Edge",
-	"Floor Tom Ctr.", // 5
+	"Floor Tom Ctr.",
 	"Closed HiHat",
 	"Floor Tom Edge",
 	"Pedal HiHat",
 	"Tom Ctr.",
-	"Semi-Open HiHat", // 10
+	"Semi-Open HiHat",
 	"Tom Edge",
 	"Swish HiHat",
 	"Crash Cymbal 1", // ZildjianA20Crash
 	"Crash Cymbal 1\nChoked",
-	"Ride Cymbal Tip",  // ZildjianA24Ride // 15
+	"Ride Cymbal Tip",  // ZildjianA24Ride
 	"Ride Cymbal\nChoked",
 	"Ride Cymbal Bell",
 	"Tambourine",
 	"Splash Cymbal",
-	"Cowbell", // 20
+	"Cowbell",
 	"Crash Cymbal 2", // ZildjianK17Crash
 	"Crash Cymbal 2\nChoked",
 	"Ride Cymbal\nShank",
 	"Crash Cymbal 3", // Paiste2002
-	"Maracas" // 25
+	"Maracas"
 };
 
 struct kGeometry {
@@ -77,6 +77,7 @@ struct kGeometry {
 	double dx, dy;
 };
 
+/* areas for visual invalidate and center position for text */
 struct kGeometry pos_redzep [DRUM_PCS] = {
 	{ 0.494497, 0.665689, 0.103448, 0.167155 }, // Kick
 	{ 0.335290, 0.652493, 0.079237, 0.168622 }, // Snare Side
@@ -162,6 +163,7 @@ typedef struct {
 	cairo_surface_t* bg_scaled;
 	cairo_surface_t* map;
 	cairo_surface_t* map_scaled;
+	cairo_surface_t* anim_alpha[DRUM_PCS];
 
 	size_t png_readoff;
 	size_t map_readoff;
@@ -292,16 +294,40 @@ queue_drum_expose (AvlDrumsLV2UI* ui, uint32_t d)
 			SW (2 * g->dx) + 2, SH (2 * g->dy) + 2);
 }
 
-#ifdef DRUMSHAPE
 static void
-drum_path (AvlDrumsLV2UI* ui, cairo_t* cr, struct kGeometry* g)
+outline_text (
+		cairo_t* cr,
+		PangoLayout* pl,
+		PangoFontDescription* font,
+		const char* txt,
+		const float cx, const float cy, const float scale,
+		const float* const c_txt,
+		const float* const c_out,
+		int* twp, int* thp)
 {
-	cairo_rectangle (cr,
-			SW (g->cx - g->dx), SH (g->cy - g->dy),
-			SW (2 * g->dx), SH (2 * g->dy));
-}
-#endif
+	cairo_save (cr);
+	cairo_translate (cr, cx, cy);
 
+	int tw, th;
+	pango_layout_set_font_description(pl, font);
+	pango_layout_set_markup(pl, txt, -1);
+	pango_layout_get_pixel_size(pl, &tw, &th);
+	pango_layout_set_alignment (pl, PANGO_ALIGN_CENTER);
+	pango_cairo_update_layout(cr, pl);
+
+	cairo_scale (cr, scale, scale);
+	cairo_translate (cr, ceil (tw / -2.0), ceil (th / -2.0));
+	pango_cairo_layout_path(cr, pl);
+
+	CairoSetSouerceRGBA (c_out);
+	cairo_stroke_preserve(cr);
+	CairoSetSouerceRGBA (c_txt);
+	cairo_fill (cr);
+
+	cairo_restore (cr);
+	if (twp) { *twp = tw; }
+	if (thp) { *thp = th; }
+}
 
 static bool
 expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
@@ -333,102 +359,138 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
 		cairo_destroy (icr);
 		cairo_surface_flush (ui->map_scaled);
 
+		for (int i = 0; i < DRUM_PCS; ++i) {
+			struct kGeometry* g = &ui->drumpos[i];
+			int ww = SW (2 * g->dx);
+			int hh = SH (2 * g->dy);
+			int xoff = SW (g->cx - g->dx);
+			int yoff = SH (g->cy - g->dy);
+
+			if (ui->anim_alpha[i]) { cairo_surface_destroy (ui->anim_alpha[i]); }
+			ui->anim_alpha[i] = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, ww, hh);
+
+			int src_stride = cairo_image_surface_get_stride (ui->map_scaled);
+			int dst_stride = cairo_image_surface_get_stride (ui->anim_alpha[i]);
+			unsigned char* src = cairo_image_surface_get_data (ui->map_scaled);
+			unsigned char* dst = cairo_image_surface_get_data (ui->anim_alpha[i]);
+
+			for (int yy = 0; yy < hh; ++yy) {
+				if (yy + yoff < 0 || yy + yoff >= ui->height) { continue; }
+				uint32_t sy = (yy + yoff) * src_stride;
+				uint32_t dy = yy * dst_stride;
+				for (int xx = 0; xx < ww; ++xx) {
+					if (xx + xoff < 0 || xx + xoff >= ui->width) { continue; }
+					uint32_t sp = sy + (xx + xoff) * 4;
+					uint32_t dp = dy + xx * 4;
+
+					if (i == ((src[sp+2] & 0xff) - 10) / 9) {
+						//printf("SET %d  %d %d\n",i, xx, yy);
+						dst[dp + 3] = 0xff;
+						dst[dp + 2] = 0xff;
+						dst[dp + 1] = 0xff;
+						dst[dp] = 0xff;
+					}
+
+				}
+			}
+
+			cairo_surface_mark_dirty(ui->anim_alpha[i]);
+		}
+
 		ui->size_changed = false;
 
+		/* scale fonts */
 		char ft[32];
 		sprintf(ft, "Sans Bold %dpx", (int) rint(20. * scale));
 		pango_font_description_free(ui->font[0]);
 		ui->font[0] = pango_font_description_from_string(ft);
 
-		sprintf(ft, "Sans %dpx", (int) rint(18. * scale));
+		sprintf(ft, "Sans %dpx", (int) rint(20. * scale));
 		pango_font_description_free(ui->font[1]);
 		ui->font[1] = pango_font_description_from_string(ft);
 	}
 
-	const float dt = 1/25.f;
-
+	/* draw background */
 	cairo_set_source_surface (cr, ui->bg_scaled, 0, 0);
 	cairo_paint (cr);
 
+	// TODO !ui->kit_ready -> shade
+
 	if (ui->show_hotzones) {
+		//cairo_set_operator (cr, CAIRO_OPERATOR_OVERLAY);
 		cairo_set_operator (cr, CAIRO_OPERATOR_HSL_COLOR);
 		cairo_set_source_surface (cr, ui->map_scaled, 0, 0);
 		cairo_paint (cr);
 	}
-
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 
-	// TODO !ui->kit_ready -> shade
-
+	/* prepare text */
 	cairo_set_line_width (cr, 1.5);
 	PangoLayout* pl = pango_cairo_create_layout(cr);
+
 	for (int i = 0; i < DRUM_PCS; ++i) {
-		if (ui->kit_anim[i] > 0) {
-			const double br = .3 + .7 * ui->kit_anim[i];
-			const double bg = .3 + .7 * ui->kit_anim[i] * (1.f - ui->kit_velo[i] / 127.f);
-			float clr[4];
-			clr[0] = br;
-			clr[1] = bg;
-			clr[2] = .3;
-			clr[3] = .9 * ui->kit_anim[i];
+		if (ui->kit_anim[i] <= 0) { continue; }
 
-			float anim = 1 - ui->kit_anim[i];
-			float yoff = anim * 0.1;
-			double cx = SW (ui->drumpos[i].cx);
-			double cy = SH (ui->drumpos[i].cy - yoff);
+#if 1
+		struct kGeometry* g = &ui->drumpos[i];
+		int xoff = SW (g->cx - g->dx);
+		int yoff = SH (g->cy - g->dy);
+		cairo_save (cr);
+		// TODO surface mask & color..
+		cairo_set_source_surface (cr, ui->anim_alpha[i], xoff, yoff);
+		cairo_rectangle (cr, xoff, yoff, SW (2 * g->dx), SH (2 * g->dy));
+		cairo_clip (cr);
+		cairo_paint_with_alpha (cr, .7 * ui->kit_anim[i]);
+		cairo_restore (cr);
 
-			cairo_save (cr);
-			cairo_translate (cr, cx, cy);
-
-			int tw, th;
-			pango_layout_set_font_description(pl, ui->font[0]);
-			pango_layout_set_markup(pl, drumnames[i], -1);
-			pango_layout_get_pixel_size(pl, &tw, &th);
-			pango_layout_set_alignment (pl, PANGO_ALIGN_CENTER);
-			pango_cairo_update_layout(cr, pl);
-
-			cairo_scale (cr, 1 + .15 * anim, 1 + .15 * anim);
-			cairo_translate (cr, ceil (tw / -2.0), ceil (th / -2.0));
-			pango_cairo_layout_path(cr, pl);
-
-			cairo_set_source_rgba (cr, 0, 0, 0, clr[3]);
-			cairo_stroke_preserve(cr);
-			cairo_set_source_rgba (cr, clr[0], clr[1], clr[2], clr[3]);
-			cairo_fill (cr);
-
-			cairo_restore (cr);
-
-			if (ui->kit_anim[i] > dt) {
-				ui->kit_anim[i] -= dt;
-				queue_draw_area (ui->rw, cx - tw * .6, cy - th * .6, tw * 1.2, th * 1.2);
-			} else if (ui->kit_anim[i] > 0) {
-				ui->kit_anim[i] = 0;
-				queue_draw_area (ui->rw, cx - tw * .6, cy - th * .6, tw * 1.2, th * 1.2);
-			} else {
-				ui->kit_anim[i] = 0;
-			}
+		static const float dti = 1/15.f;
+		if (ui->kit_anim[i] > dti) {
+			ui->kit_anim[i] -= dti;
+			queue_drum_expose (ui, i);
+		} else if (ui->kit_anim[i] > 0) {
+			ui->kit_anim[i] = 0;
+			queue_drum_expose (ui, i);
+		} else {
+			ui->kit_anim[i] = 0;
 		}
+#else
+		const double br = .3 + .7 * ui->kit_anim[i];
+		const double bg = .3 + .7 * ui->kit_anim[i] * (1.f - ui->kit_velo[i] / 127.f);
+		float c_txt[4];
+		float c_out[4];
+		c_txt[0] = br;
+		c_txt[1] = bg;
+		c_txt[2] = .3;
+		c_txt[3] = .9 * ui->kit_anim[i];
+		c_out[0] = c_out[1] = c_out[2] = 0;
+		c_out[3] = .9 * ui->kit_anim[i];
+
+		int tw, th;
+		float anim = 1 - ui->kit_anim[i];
+		float yoff = anim * 0.1;
+		double cx = SW (ui->drumpos[i].cx);
+		double cy = SH (ui->drumpos[i].cy - yoff);
+
+		outline_text (cr, pl, ui->font[0], drumnames[i], cx, cy, 1 + .15 * anim, c_txt, c_out, &tw, &th);
+
+		static const float dtt = 1/25.f;
+		if (ui->kit_anim[i] > dtt) {
+			ui->kit_anim[i] -= dtt;
+			queue_draw_area (ui->rw, cx - tw * .6, cy - th * .6, tw * 1.2, th * 1.2);
+		} else if (ui->kit_anim[i] > 0) {
+			ui->kit_anim[i] = 0;
+			queue_draw_area (ui->rw, cx - tw * .6, cy - th * .6, tw * 1.2, th * 1.2);
+		} else {
+			ui->kit_anim[i] = 0;
+		}
+#endif
 	}
 
 	if (ui->hover_note >= 0) {
-		int i = ui->hover_note;
-		int tw, th;
-		cairo_save (cr);
-		pango_layout_set_font_description(pl, ui->font[1]);
-		pango_layout_set_markup(pl, drumnames[i], -1);
-		pango_layout_get_pixel_size(pl, &tw, &th);
-		pango_layout_set_alignment (pl, PANGO_ALIGN_CENTER);
-		pango_cairo_update_layout(cr, pl);
-
-		cairo_translate (cr, SW (ui->drumpos[i].cx), SH (ui->drumpos[i].cy));
-		cairo_translate (cr, ceil (tw / -2.0), ceil (th / -2.0));
-
-		pango_cairo_layout_path(cr, pl);
-		cairo_set_source_rgb (cr, 1, 1, 1);
-		cairo_stroke_preserve(cr);
-		cairo_set_source_rgb (cr, 0, 0, 0);
-		cairo_fill (cr);
-		cairo_restore (cr);
+		const int i = ui->hover_note;
+		outline_text (cr, pl, ui->font[1], drumnames[i],
+				SW (ui->drumpos[i].cx), SH (ui->drumpos[i].cy), 1.0,
+				c_wht, c_blk, NULL, NULL);
 	}
 	g_object_unref(pl);
 
@@ -546,7 +608,7 @@ mouseup (RobWidget* handle, RobTkBtnEvent *event)
 	AvlDrumsLV2UI* ui = (AvlDrumsLV2UI*)GET_HANDLE (handle);
 	if (ui->played_note >= 0) {
 		forge_note (ui, ui->played_note, 0);
-#if 1
+#if 1 // TODO dedicated area
 	} else {
 		ui->show_hotzones = !ui->show_hotzones;
 		queue_draw (ui->rw);
@@ -722,6 +784,9 @@ cleanup (LV2UI_Handle handle)
 	cairo_surface_destroy (ui->map);
 	if (ui->bg_scaled) { cairo_surface_destroy (ui->bg_scaled); }
 	if (ui->map_scaled) { cairo_surface_destroy (ui->map_scaled); }
+	for (int i = 0; i < DRUM_PCS; ++i) {
+		if (ui->anim_alpha[i]) { cairo_surface_destroy (ui->anim_alpha[i]); }
+	}
 	pango_font_description_free(ui->font[0]);
 	pango_font_description_free(ui->font[1]);
 	free (ui);
