@@ -167,6 +167,7 @@ typedef struct {
 	size_t map_readoff;
 	int played_note;
 	int hover_note;
+	bool show_hotzones;
 
 	struct kGeometry* drumpos;
 
@@ -349,7 +350,7 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
 	cairo_set_source_surface (cr, ui->bg_scaled, 0, 0);
 	cairo_paint (cr);
 
-	if (0) { // show hotzones
+	if (ui->show_hotzones) {
 		cairo_set_operator (cr, CAIRO_OPERATOR_HSL_COLOR);
 		cairo_set_source_surface (cr, ui->map_scaled, 0, 0);
 		cairo_paint (cr);
@@ -470,52 +471,24 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
 static int
 find_note (AvlDrumsLV2UI* ui, RobTkBtnEvent* ev)
 {
-	if (!ui->map_scaled) {
+	if (!ui->map) { return -1; }
+	unsigned char* img = cairo_image_surface_get_data (ui->map);
+	const int x = rint (ev->x * 1024.f / (float)ui->width);
+	const int y = rint (ev->y * 512.f / (float)ui->height);
+	if (x < 0 || x >= cairo_image_surface_get_width (ui->map)) {
 		return -1;
 	}
-	unsigned char* img = cairo_image_surface_get_data (ui->map_scaled);
-	if (ev->x < 0 || ev->x >= cairo_image_surface_get_width (ui->map_scaled)) {
+	if (y < 0 || y >= cairo_image_surface_get_height (ui->map)) {
 		return -1;
 	}
-	if (ev->y < 0 || ev->y >= cairo_image_surface_get_height (ui->map_scaled)) {
+	uint32_t p = y * cairo_image_surface_get_stride  (ui->map) + x * 4;
+	// color index (28 colors)
+	// for (i = 10; i < 256; i += 9) { R, G, B =  i, ((21 * i) % 256), (17 * i) % 256 }
+	int c = ((img[p+2] & 0xff) - 10) / 9;
+	if (c >= DRUM_PCS) {
 		return -1;
 	}
-	uint32_t p = ev->y * cairo_image_surface_get_stride  (ui->map_scaled) + ev->x * 4;
-	uint32_t c = (img[p] << 16) | (img[p+1] << 8) | img[p+2];
-	switch (c) {
-		case 0x02006b: return  0; // Kick
-		case 0xf5fe52: return  1; // Snare Side
-		case 0xe9ebb0: return  2; // Snare Ctr
-		case 0x2d4111: return  3; // Hand Clap
-		case 0x0000ff: return  4; // Snare edge
-		case 0xa07d69: return  5; // Floor Tom Ctr
-		case 0xb1b855: return  6; // Closed HH (center ring)
-		case 0x92cdd3: return  7; // Floor Tom Edge
-		case 0x7b9678: return  8; // Pedal HH
-		case 0x23265d: return  9; // Tom Ctr
-		case 0x5f086c: return 10; // Semi-Open HH (middle ring)
-		case 0xd29695: return 11; // Tom Edge
-		case 0x00ff58: return 12; // HH Swish (outer ring)
-		case 0x7c8633: return 13; // Crash A
-		case 0xe2e85a: return 14; // Crash A Choked
-		case 0x922d51: return 15; // Ride Tip (2nd ring)
-		case 0x06ccff: return 16; // Ride Choked (4th/outer ring)
-		case 0x9bfbbc: return 17; // Ride Bell (1st/inner ring)
-		case 0xe900ff: return 18; // Tambourine
-		case 0x8080b2: return 19; // Splash
-		case 0xc03f4b: return 20; // Cowbell
-		case 0xf37c33: return 21; // Crash K
-		case 0xff006f: return 22; // Crash K Choked
-		case 0x186f39: return 23; // Ride Shank (3rd ring)
-		case 0xf2fe0f: return 24; // Crash P
-		case 0xbd81af: return 25; // Maracas
-		case 0x000200:
-			return -1;
-		default:
-			//printf ("%4d %4d -> 0x%02x%02x%02x\n", ev->x, ev->y, img[p], img[p+1], img[p+2]);
-			break;
-	}
-	return -1;
+	return c;
 }
 
 static RobWidget*
@@ -573,6 +546,11 @@ mouseup (RobWidget* handle, RobTkBtnEvent *event)
 	AvlDrumsLV2UI* ui = (AvlDrumsLV2UI*)GET_HANDLE (handle);
 	if (ui->played_note >= 0) {
 		forge_note (ui, ui->played_note, 0);
+#if 1
+	} else {
+		ui->show_hotzones = !ui->show_hotzones;
+		queue_draw (ui->rw);
+#endif
 	}
 	ui->played_note = -1;
 #ifdef DEVELOP
@@ -686,6 +664,7 @@ instantiate (
 	ui->png_readoff  = 0;
 	ui->map_readoff  = 0;
 	ui->size_changed = true;
+	ui->show_hotzones = false;
 
 	switch (ui->kit) {
 		case RedZeppelin:
