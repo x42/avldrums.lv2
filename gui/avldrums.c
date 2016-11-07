@@ -17,7 +17,6 @@
  */
 
 //#define DEVELOP // dump areas
-//#define DRUMSHAPE // visualize hotspots
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,69 +49,90 @@ static const char* drumnames [DRUM_PCS] = {
 	"Snare Ctr.",
 	"Hand Clap",
 	"Snare Edge",
-	"Floor Tom Ctr.",
+	"Floor Tom Ctr.", // 5
 	"Closed HiHat",
 	"Floor Tom Edge",
 	"Pedal HiHat",
 	"Tom Ctr.",
-	"Semi-Open HiHat",
+	"Semi-Open HiHat", // 10
 	"Tom Edge",
 	"Swish HiHat",
 	"Crash Cymbal 1", // ZildjianA20Crash
 	"Crash Cymbal 1\nChoked",
-	"Ride Cymbal Tip",  // ZildjianA24Ride
+	"Ride Cymbal Tip",  // ZildjianA24Ride // 15
 	"Ride Cymbal\nChoked",
 	"Ride Cymbal Bell",
 	"Tambourine",
 	"Splash Cymbal",
-	"Cowbell",
+	"Cowbell", // 20
 	"Crash Cymbal 2", // ZildjianK17Crash
 	"Crash Cymbal 2\nChoked",
 	"Ride Cymbal\nShank",
 	"Crash Cymbal 3", // Paiste2002
-	"High Roto Tom",
-	"Mid Roto Tom",
-	"Low Roto Tom",
-	"Maracas"
+	"Maracas" // 25
 };
 
 struct kGeometry {
 	double cx, cy;
 	double dx, dy;
-	bool rect; // false: ellipse, true: rectangle
-	uint32_t z_index;
 };
 
-struct kGeometry drumpos [DRUM_PCS] = {
-	{ 0.485401, 0.659020, 0.105318, 0.088634, false,  0}, // Kick
-	{ 0.330000, 0.747500, 0.080000, 0.172500, false,  4}, // Snare Side
-	{ 0.325000, 0.740000, 0.058750, 0.102500, false,  7}, // Snare
-	{ 0, 0, 0, 0, true, 0 },
-	{ 0.325000, 0.740000, 0.076250, 0.155000, false,  5}, // Snare Rim
-	{ 0.675000, 0.797500, 0.066250, 0.107500, false, 12}, // Floor Tom (center)
-	{ 0.166840, 0.698644, 0.093848, 0.166840, false, 10}, // Hi Hat (closed)
-	{ 0.671250, 0.807500, 0.100000, 0.195000, false, 10}, // Floor Tom (edge)
-	{ 0.239312, 0.887383, 0.048488, 0.089677, false,  0}, // Hi Hat (pedal)
-	{ 0.311250, 0.372500, 0.040000, 0.080000, false,  5}, // Tom (center)
-	{ 0.131387, 0.813347, 0.032325, 0.060480, false, 18}, // Hi Hat (semi open)
-	{ 0.310000, 0.372500, 0.072500, 0.150000, false,  0}, // Tom
-	{ 0.199687, 0.772680, 0.035975, 0.068822, false, 17}, // Hi Hat (swish)
-	{ 0.142500, 0.325000, 0.101250, 0.172500, false, 35}, // ZildjianA20Crash (left)
-	{ 0.147180, 0.332875, 0.125860, 0.211830, false, 30}, // ZildjianA20Crash
-	{ 0.641814, 0.479666, 0.084463, 0.189781, false, 25}, // Ride
-	{ 0.641814, 0.473410, 0.122523, 0.221064, false, 20}, // Ride (edge)
-	{ 0.640772, 0.449426, 0.031804, 0.057351, false, 27}, // Ride (bell)
-	{ 0.141814, 0.654849, 0.044838, 0.080292, false, 20}, // Tambourine (above HH)
-	{ 0.317744, 0.107290, 0.059147, 0.101788, false,  0}, // Splash
-	{ 0.501250, 0.580000, 0.022500, 0.057500, true , 20}, // Cowbell
-	{ 0.914568, 0.685252, 0.108813, 0.170863, false, 45}, // ZildjianK17Crash
-	{ 0.911279, 0.693260, 0.132737, 0.211830, false, 40}, // ZildjianK17Crash
-	{ 0.567258, 0.460897, 0.044838, 0.087591, false, 27}, // Ride (shank)
-	{ 0.846715, 0.453597, 0.145985, 0.240876, false, 30}, // Paiste2002
-	{ 0, 0, 0, 0, true, 0},
-	{ 0, 0, 0, 0, true, 0},
-	{ 0, 0, 0, 0, true, 0},
-	{ 0, 0, 0, 0, true, 0},
+struct kGeometry pos_redzep [DRUM_PCS] = {
+	{ 0.494497, 0.665689, 0.103448, 0.167155 }, // Kick
+	{ 0.335290, 0.652493, 0.079237, 0.168622 }, // Snare Side
+	{ 0.335290, 0.652493, 0.079237, 0.168622 }, // Snare
+	{ 0.491563, 0.343109, 0.045488, 0.095308 }, // Hand Clap
+	{ 0.335290, 0.652493, 0.079237, 0.168622 }, // Snare Rim
+	{ 0.680851, 0.662757, 0.099046, 0.184751 }, // Floor Tom (center)
+	{ 0.172414, 0.699413, 0.097579, 0.175953 }, // Hi Hat (closed)
+	{ 0.680851, 0.662757, 0.099046, 0.184751 }, // Floor Tom (edge)
+	{ 0.302274, 0.920821, 0.060895, 0.083578 }, // Hi Hat (pedal)
+	{ 0.311079, 0.341642, 0.077770, 0.155425 }, // Tom (center)
+	{ 0.172414, 0.699413, 0.097579, 0.175953 }, // Hi Hat (semi open)
+	{ 0.311079, 0.341642, 0.077770, 0.155425 }, // Tom
+	{ 0.172414, 0.699413, 0.097579, 0.175953 }, // Hi Hat (swish)
+	{ 0.152605, 0.243402, 0.132062, 0.240469 }, // ZildjianA20Crash (left)
+	{ 0.152605, 0.243402, 0.132062, 0.240469 }, // ZildjianA20Crash
+	{ 0.643434, 0.312317, 0.113720, 0.211144 }, // Ride
+	{ 0.643434, 0.312317, 0.113720, 0.211144 }, // Ride (edge)
+	{ 0.643434, 0.312317, 0.113720, 0.211144 }, // Ride (bell)
+	{ 0.219369, 0.894428, 0.061629, 0.105572 }, // Tambourine (below HH)
+	{ 0.324285, 0.105572, 0.058694, 0.108504 }, // Splash
+	{ 0.495965, 0.508798, 0.024945, 0.067449 }, // Cowbell
+	{ 0.872340, 0.558651, 0.118855, 0.208211 }, // ZildjianK17Crash
+	{ 0.872340, 0.558651, 0.118855, 0.208211 }, // ZildjianK17Crash
+	{ 0.643434, 0.312317, 0.113720, 0.211144 }, // Ride (shank)
+	{ 0.795304, 0.309384, 0.131328, 0.218475 }, // Paiste2002
+	{ 0.735877, 0.736070, 0.068966, 0.111437 }  // Maracas
+};
+
+struct kGeometry pos_blackperl [DRUM_PCS] = {
+	{ 0.466111, 0.671533, 0.098019, 0.155370 }, // Kick
+	{ 0.305005, 0.673618, 0.082899, 0.161627 }, // Snare Side
+	{ 0.305005, 0.673618, 0.082899, 0.161627 }, // Snare
+	{ 0.460375, 0.359750, 0.040667, 0.083420 }, // Hand Clap
+	{ 0.305005, 0.673618, 0.082899, 0.161627 }, // Snare Rim
+	{ 0.635036, 0.690302, 0.088634, 0.168926 }, // Floor Tom (center)
+	{ 0.143379, 0.719499, 0.095933, 0.180396 }, // Hi Hat (closed)
+	{ 0.635036, 0.690302, 0.088634, 0.168926 }, // Floor Tom (edge)
+	{ 0.270073, 0.921794, 0.063087, 0.080292 }, // Hi Hat (pedal)
+	{ 0.316475, 0.368092, 0.066736, 0.128259 }, // Tom (center)
+	{ 0.143379, 0.719499, 0.095933, 0.180396 }, // Hi Hat (semi open)
+	{ 0.316475, 0.368092, 0.066736, 0.128259 }, // Tom
+	{ 0.143379, 0.719499, 0.095933, 0.180396 }, // Hi Hat (swish)
+	{ 0.112617, 0.258603, 0.108968, 0.191867 }, // SabianCrash (left)
+	{ 0.112617, 0.258603, 0.108968, 0.191867 }, // SabianCrash
+	{ 0.610010, 0.308655, 0.100626, 0.185610 }, // Ride
+	{ 0.610010, 0.308655, 0.100626, 0.185610 }, // Ride (edge)
+	{ 0.610010, 0.308655, 0.100626, 0.185610 }, // Ride (bell)
+	{ 0.191345, 0.890511, 0.059958, 0.110532 }, // Tambourine (below HH)
+	{ 0.288321, 0.106361, 0.058916, 0.108446 }, // Splash
+	{ 0.469760, 0.556830, 0.023462, 0.067779 }, // Cowbell
+	{ 0.843066, 0.548488, 0.115746, 0.210636 }, // SabianAAXCrash
+	{ 0.843066, 0.548488, 0.115746, 0.210636 }, // SabianAAXCrash
+	{ 0.610010, 0.308655, 0.100626, 0.185610 }, // Ride (shank)
+	{ 0.764338, 0.301356, 0.131387, 0.216893 }, // Paiste2002
+	{ 0.684046, 0.736184, 0.061522, 0.110532 }, // Maracas
 };
 
 typedef struct {
@@ -140,16 +160,19 @@ typedef struct {
 
 	cairo_surface_t* bg;
 	cairo_surface_t* bg_scaled;
-
+	cairo_surface_t* map;
+	cairo_surface_t* map_scaled;
 
 	size_t png_readoff;
+	size_t map_readoff;
 	int played_note;
 	int hover_note;
+
+	struct kGeometry* drumpos;
 
 #ifdef DEVELOP
 	double _xc, _yc;
 	double _xd, _yd;
-	bool   _tt;
 #endif
 } AvlDrumsLV2UI;
 
@@ -158,15 +181,54 @@ typedef struct {
  */
 
 static cairo_status_t
-red_png_read (void* c, unsigned char* d, unsigned int s)
+img_png_read (void* c, unsigned char* d, unsigned int s)
 {
 #include  "gui/red_zeppelin.png.h"
+#include  "gui/black_pearl.png.h"
 	AvlDrumsLV2UI* ui = (AvlDrumsLV2UI*)c;
-	if (s + ui->png_readoff > sizeof (RedZeppelinPng)) {
+	const unsigned char* img;
+	size_t len;
+	switch (ui->kit) {
+		case RedZeppelin:
+			img = RedZeppelinPng;
+			len = sizeof (RedZeppelinPng);
+			break;
+		default:
+			img = BlackPearlPng;
+			len = sizeof (BlackPearlPng);
+			break;
+	}
+	if (s + ui->png_readoff > len) {
 		return CAIRO_STATUS_READ_ERROR;
 	}
-	memcpy (d, &RedZeppelinPng[ui->png_readoff], s);
+	memcpy (d, &img[ui->png_readoff], s);
 	ui->png_readoff += s;
+	return CAIRO_STATUS_SUCCESS;
+}
+
+static cairo_status_t
+map_png_read (void* c, unsigned char* d, unsigned int s)
+{
+#include  "gui/red_zeppelin.map.h"
+#include  "gui/black_pearl.map.h"
+	AvlDrumsLV2UI* ui = (AvlDrumsLV2UI*)c;
+	const unsigned char* img;
+	size_t len;
+	switch (ui->kit) {
+		case RedZeppelin:
+			img = RedZeppelinMap;
+			len = sizeof (RedZeppelinMap);
+			break;
+		default:
+			img = BlackPearlMap;
+			len = sizeof (BlackPearlMap);
+			break;
+	}
+	if (s + ui->map_readoff > len) {
+		return CAIRO_STATUS_READ_ERROR;
+	}
+	memcpy (d, &img[ui->map_readoff], s);
+	ui->map_readoff += s;
 	return CAIRO_STATUS_SUCCESS;
 }
 
@@ -223,7 +285,7 @@ static void
 queue_drum_expose (AvlDrumsLV2UI* ui, uint32_t d)
 {
 	assert (d < DRUM_PCS);
-	struct kGeometry* g = &drumpos[d];
+	struct kGeometry* g = &ui->drumpos[d];
 	queue_draw_area (ui->rw,
 			SW (g->cx - g->dx) - 1, SH (g->cy - g->dy) -1,
 			SW (2 * g->dx) + 2, SH (2 * g->dy) + 2);
@@ -233,20 +295,9 @@ queue_drum_expose (AvlDrumsLV2UI* ui, uint32_t d)
 static void
 drum_path (AvlDrumsLV2UI* ui, cairo_t* cr, struct kGeometry* g)
 {
-	if (g->rect) {
-		cairo_rectangle (cr,
-				SW (g->cx - g->dx), SH (g->cy - g->dy),
-				SW (2 * g->dx), SH (2 * g->dy));
-	} else {
-		cairo_matrix_t save_matrix;
-		cairo_get_matrix(cr, &save_matrix);
-		cairo_translate(cr, SW (g->cx), SH (g->cy));
-		cairo_scale(cr, 1.0, SH (g->dy) / SW (g->dx));
-		cairo_translate(cr, SW (-g->cx), SH (-g->cy));
-		cairo_new_path(cr);
-		cairo_arc (cr, SW (g->cx), SH (g->cy), SW (g->dx), 0, 2 * M_PI);
-		cairo_set_matrix(cr, &save_matrix);
-	}
+	cairo_rectangle (cr,
+			SW (g->cx - g->dx), SH (g->cy - g->dy),
+			SW (2 * g->dx), SH (2 * g->dy));
 }
 #endif
 
@@ -262,15 +313,25 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
 
 	if (ui->size_changed) {
 		float scale = ui->width / (float) cairo_image_surface_get_width (ui->bg);
-		if (ui->bg_scaled) {
-			cairo_surface_destroy (ui->bg_scaled);
-		}
+		if (ui->bg_scaled) { cairo_surface_destroy (ui->bg_scaled); }
+		if (ui->map_scaled) { cairo_surface_destroy (ui->map_scaled); }
+
 		ui->bg_scaled = cairo_image_surface_create (CAIRO_FORMAT_RGB24, ui->width, ui->height);
+		ui->map_scaled = cairo_image_surface_create (CAIRO_FORMAT_RGB24, ui->width, ui->height);
+
 		cairo_t* icr = cairo_create (ui->bg_scaled);
 		cairo_scale (icr, scale, scale);
 		cairo_set_source_surface (icr, ui->bg, 0, 0);
 		cairo_paint (icr);
 		cairo_destroy (icr);
+
+		icr = cairo_create (ui->map_scaled);
+		cairo_scale (icr, scale, scale);
+		cairo_set_source_surface (icr, ui->map, 0, 0);
+		cairo_paint (icr);
+		cairo_destroy (icr);
+		cairo_surface_flush (ui->map_scaled);
+
 		ui->size_changed = false;
 
 		char ft[32];
@@ -288,6 +349,14 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
 	cairo_set_source_surface (cr, ui->bg_scaled, 0, 0);
 	cairo_paint (cr);
 
+	if (0) { // show hotzones
+		cairo_set_operator (cr, CAIRO_OPERATOR_HSL_COLOR);
+		cairo_set_source_surface (cr, ui->map_scaled, 0, 0);
+		cairo_paint (cr);
+	}
+
+	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
+
 	// TODO !ui->kit_ready -> shade
 
 	cairo_set_line_width (cr, 1.5);
@@ -304,8 +373,8 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
 
 			float anim = 1 - ui->kit_anim[i];
 			float yoff = anim * 0.1;
-			double cx = SW (drumpos[i].cx);
-			double cy = SH (drumpos[i].cy - yoff);
+			double cx = SW (ui->drumpos[i].cx);
+			double cy = SH (ui->drumpos[i].cy - yoff);
 
 			cairo_save (cr);
 			cairo_translate (cr, cx, cy);
@@ -339,15 +408,28 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
 			}
 		}
 	}
-	g_object_unref(pl);
 
 	if (ui->hover_note >= 0) {
 		int i = ui->hover_note;
-		static const float c_ann[4] = {0.1, 1.0, 0.1, 1.0};
-		write_text_full (cr, drumnames[i], ui->font[1],
-				SW (drumpos[i].cx), SH (drumpos[i].cy),
-				0, 2, c_ann);
+		int tw, th;
+		cairo_save (cr);
+		pango_layout_set_font_description(pl, ui->font[1]);
+		pango_layout_set_markup(pl, drumnames[i], -1);
+		pango_layout_get_pixel_size(pl, &tw, &th);
+		pango_layout_set_alignment (pl, PANGO_ALIGN_CENTER);
+		pango_cairo_update_layout(cr, pl);
+
+		cairo_translate (cr, SW (ui->drumpos[i].cx), SH (ui->drumpos[i].cy));
+		cairo_translate (cr, ceil (tw / -2.0), ceil (th / -2.0));
+
+		pango_cairo_layout_path(cr, pl);
+		cairo_set_source_rgb (cr, 1, 1, 1);
+		cairo_stroke_preserve(cr);
+		cairo_set_source_rgb (cr, 0, 0, 0);
+		cairo_fill (cr);
+		cairo_restore (cr);
 	}
+	g_object_unref(pl);
 
 #ifdef DEVELOP
 	if (ui->played_note >= 0 && ui->_yd > 0 && ui->_xd > 0) {
@@ -357,33 +439,10 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
 		cairo_set_line_width (cr, 5.0);
 		cairo_set_source_rgba (cr, 1, 0, 0, 1);
 		cairo_stroke (cr);
-		if (ui->_tt) {
-			cairo_rectangle (cr,
-					SW (ui->_xc - ui->_xd), SH (ui->_yc - ui->_yd),
-					SW (2 * ui->_xd), SH (2 * ui->_yd));
-		} else {
-			cairo_matrix_t save_matrix;
-			cairo_get_matrix(cr, &save_matrix);
-			cairo_translate(cr, SW (ui->_xc), SH (ui->_yc));
-			cairo_scale(cr, 1.0, SH (ui->_yd) / SW (ui->_xd));
-			cairo_translate(cr, SW (-ui->_xc), SH (-ui->_yc));
-			cairo_arc (cr, SW (ui->_xc), SH (ui->_yc), SW (ui->_xd), 0, 2 * M_PI);
-			cairo_set_matrix(cr, &save_matrix);
-		}
+		cairo_rectangle (cr,
+				SW (ui->_xc - ui->_xd), SH (ui->_yc - ui->_yd),
+				SW (2 * ui->_xd), SH (2 * ui->_yd));
 		cairo_set_source_rgba (cr, .7, .7, .0, .5);
-		cairo_fill (cr);
-	}
-#endif
-
-#ifdef DRUMSHAPE
-	for (int i = 0; i < DRUM_PCS; ++i) {
-		float c[4];
-		c[0] = rand() / (float)RAND_MAX;
-		c[1] = rand() / (float)RAND_MAX;
-		c[2] = rand() / (float)RAND_MAX;
-		c[3] = 1.0;
-		cairo_set_source_rgba (cr, c[0], c[1], c[2], 0.3);
-		drum_path (ui, cr, &drumpos[i]);
 		cairo_fill (cr);
 	}
 #endif
@@ -408,47 +467,55 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
  * UI event handling
  */
 
-static float
-event_inside (AvlDrumsLV2UI* ui, struct kGeometry* g, double xx, double yy, uint32_t minz)
-{
-	if (g->rect) {
-		if (g->cx - g->dx < xx && xx < g->cx + g->dx && g->cy - g->dy < yy && yy < g->cy + g->dy) {
-			if (g->z_index >= minz) {
-				return 1;
-			}
-		}
-	} else {
-		if (g->dx == 0 || g->dy == 0) { return 0; }
-
-#define SQ(X) ((X) * (X))
-		const double d = SQ(xx - g->cx) / SQ(g->dx) + SQ(yy - g->cy) / SQ(g->dy);
-		if (d < 1 && g->z_index >= minz) { return 1; }
-#undef SQ
-	}
-	return 0;
-}
-
 static int
-find_note (AvlDrumsLV2UI* ui, RobTkBtnEvent* ev, float* velocity)
+find_note (AvlDrumsLV2UI* ui, RobTkBtnEvent* ev)
 {
-	double xx = ev->x / (double) ui->width;
-	double yy = ev->y / (double) ui->height;
-
-	int n = -1;
-	uint32_t minz = 0;
-	float vel = 0;
-	for (int i = 0; i < DRUM_PCS; ++i) {
-		float v;
-		if (0 < (v = event_inside (ui, &drumpos[i], xx, yy, minz))) {
-			minz = drumpos[i].z_index;
-			n = i;
-			vel = v;
-		}
+	if (!ui->map_scaled) {
+		return -1;
 	}
-	if (n >= 0 && velocity) {
-		*velocity = vel;
+	unsigned char* img = cairo_image_surface_get_data (ui->map_scaled);
+	if (ev->x < 0 || ev->x >= cairo_image_surface_get_width (ui->map_scaled)) {
+		return -1;
 	}
-	return n;
+	if (ev->y < 0 || ev->y >= cairo_image_surface_get_height (ui->map_scaled)) {
+		return -1;
+	}
+	uint32_t p = ev->y * cairo_image_surface_get_stride  (ui->map_scaled) + ev->x * 4;
+	uint32_t c = (img[p] << 16) | (img[p+1] << 8) | img[p+2];
+	switch (c) {
+		case 0x02006b: return  0; // Kick
+		case 0xf5fe52: return  1; // Snare Side
+		case 0xe9ebb0: return  2; // Snare Ctr
+		case 0x2d4111: return  3; // Hand Clap
+		case 0x0000ff: return  4; // Snare edge
+		case 0xa07d69: return  5; // Floor Tom Ctr
+		case 0xb1b855: return  6; // Closed HH (center ring)
+		case 0x92cdd3: return  7; // Floor Tom Edge
+		case 0x7b9678: return  8; // Pedal HH
+		case 0x23265d: return  9; // Tom Ctr
+		case 0x5f086c: return 10; // Semi-Open HH (middle ring)
+		case 0xd29695: return 11; // Tom Edge
+		case 0x00ff58: return 12; // HH Swish (outer ring)
+		case 0x7c8633: return 13; // Crash A
+		case 0xe2e85a: return 14; // Crash A Choked
+		case 0x922d51: return 15; // Ride Tip (2nd ring)
+		case 0x06ccff: return 16; // Ride Choked (4th/outer ring)
+		case 0x9bfbbc: return 17; // Ride Bell (1st/inner ring)
+		case 0xe900ff: return 18; // Tambourine
+		case 0x8080b2: return 19; // Splash
+		case 0xc03f4b: return 20; // Cowbell
+		case 0xf37c33: return 21; // Crash K
+		case 0xff006f: return 22; // Crash K Choked
+		case 0x186f39: return 23; // Ride Shank (3rd ring)
+		case 0xf2fe0f: return 24; // Crash P
+		case 0xbd81af: return 25; // Maracas
+		case 0x000200:
+			return -1;
+		default:
+			//printf ("%4d %4d -> 0x%02x%02x%02x\n", ev->x, ev->y, img[p], img[p+1], img[p+2]);
+			break;
+	}
+	return -1;
 }
 
 static RobWidget*
@@ -461,12 +528,11 @@ mousemove (RobWidget* handle, RobTkBtnEvent *ev)
 		double yp = ev->y / (double) ui->height;
 		ui->_xd = fabs (xp - ui->_xc);
 		ui->_yd = fabs (yp - ui->_yc);
-		printf ("{ %f, %f, %f, %f, %5s, 0 },\n",
-				ui->_xc, ui->_yc, ui->_xd, ui->_yd, ui->_tt ? "true" : "false");
+		printf ("{ %f, %f, %f, %f },\n", ui->_xc, ui->_yc, ui->_xd, ui->_yd);
 		queue_draw (ui->rw);
 	}
 #else
-	int n = find_note (ui, ev, NULL);
+	int n = find_note (ui, ev);
 	if (ui->hover_note != n) {
 		// TODO position.. + area
 		ui->hover_note = n;
@@ -485,9 +551,7 @@ mousedown (RobWidget* handle, RobTkBtnEvent *ev)
 	ui->_yc = ev->y / (double) ui->height;
 	ui->_xd = 0;
 	ui->_yd = 0;
-	ui->_tt = ev->button == 1 ? false : true;
-	printf ("{ %f, %f, %f, %f, %5s, 0 },\n",
-			ui->_xc, ui->_yc, ui->_xd, ui->_yd, ui->_tt ? "true" : "false");
+	printf ("{ %f, %f, %f, %f },\n", ui->_xc, ui->_yc, ui->_xd, ui->_yd);
 	queue_draw (ui->rw);
 #endif
 
@@ -495,7 +559,7 @@ mousedown (RobWidget* handle, RobTkBtnEvent *ev)
 		return NULL;
 	}
 
-	int n = find_note (ui, ev, NULL);
+	int n = find_note (ui, ev);
 	if (n >= 0) {
 		ui->played_note = n + 36;
 		forge_note (ui, ui->played_note, 0x7f); // TODO velocity
@@ -620,7 +684,17 @@ instantiate (
 	ui->hover_note   = -1;
 	ui->kit_ready    = false;
 	ui->png_readoff  = 0;
+	ui->map_readoff  = 0;
 	ui->size_changed = true;
+
+	switch (ui->kit) {
+		case RedZeppelin:
+			ui->drumpos = pos_redzep;
+			break;
+		default:
+			ui->drumpos = pos_blackperl;
+			break;
+	}
 
 	for (int i = 0; i < DRUM_PCS; ++i) {
 		ui->kit_anim[i] = 0;
@@ -647,7 +721,8 @@ instantiate (
 	robwidget_set_mousedown (ui->rw, mousedown);
 	robwidget_set_mousemove (ui->rw, mousemove);
 
-	ui->bg = cairo_image_surface_create_from_png_stream (red_png_read, ui);
+	ui->bg = cairo_image_surface_create_from_png_stream (img_png_read, ui);
+	ui->map = cairo_image_surface_create_from_png_stream (map_png_read, ui);
 
 	*widget = ui->rw;
 	return ui;
@@ -665,9 +740,9 @@ cleanup (LV2UI_Handle handle)
 	AvlDrumsLV2UI* ui = (AvlDrumsLV2UI*)handle;
 	robwidget_destroy (ui->rw);
 	cairo_surface_destroy (ui->bg);
-	if (ui->bg_scaled) {
-		cairo_surface_destroy (ui->bg_scaled);
-	}
+	cairo_surface_destroy (ui->map);
+	if (ui->bg_scaled) { cairo_surface_destroy (ui->bg_scaled); }
+	if (ui->map_scaled) { cairo_surface_destroy (ui->map_scaled); }
 	pango_font_description_free(ui->font[0]);
 	pango_font_description_free(ui->font[1]);
 	free (ui);

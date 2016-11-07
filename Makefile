@@ -86,8 +86,8 @@ endif
 
 targets+=$(BUILDDIR)$(LV2NAME)$(LIB_EXT)
 
-targets+=$(BUILDDIR)Red_Zeppelin_4-1.1.sf2
-targets+=$(BUILDDIR)Black_Pearl_4B-1.1.sf2
+targets+=$(BUILDDIR)Red_Zeppelin_4_LV2.sf2
+targets+=$(BUILDDIR)Black_Pearl_4_LV2.sf2
 
 UITTL=
 ifneq ($(BUILDOPENGL), no)

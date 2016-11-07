@@ -26,12 +26,12 @@
       a lv2:OutputPort, lv2:AudioPort ;
       lv2:index 7 ;
       lv2:symbol "out6" ;
-      lv2:name "Overheads L" ;
+      lv2:name "Cymbals L" ;
   ] , [
       a lv2:OutputPort, lv2:AudioPort ;
       lv2:index 8 ;
       lv2:symbol "out7" ;
-      lv2:name "Overheads R" ;
+      lv2:name "Cymbals R" ;
   ] , [
       a lv2:OutputPort, lv2:AudioPort ;
       lv2:index 9 ;

@@ -33,7 +33,7 @@
 #define x_forge_object lv2_atom_forge_blank
 #endif
 
-#define DRUM_PCS 29
+#define DRUM_PCS 26
 
 typedef struct {
 	LV2_URID atom_Blank;

@@ -198,15 +198,12 @@ assign_channel (uint8_t note)
 		case 39: // Hand Clap
 		case 54: // Tambourine
 		case 56: // Cowbell
-		case 61: // Roto High
-		case 62: // Mid Roto
-		case 63: // Low Roto
-		case 64: // Maracas
+		case 61: // Maracas
 			return 6; // Percussions etc
 		default:
 			break;
 	}
-	return 5; // Overheads
+	return 5; // Cymbals
 }
 
 static void
@@ -251,8 +248,8 @@ instantiate (const LV2_Descriptor*     descriptor,
              const LV2_Feature* const* features)
 {
 	static const char* kits [] = {
-		"Black_Pearl_4B-1.1.sf2",
-		"Red_Zeppelin_4-1.1.sf2"
+		"Black_Pearl_4_LV2.sf2",
+		"Red_Zeppelin_4_LV2.sf2"
 	};
 
 	int kit = -1;
@@ -593,8 +590,8 @@ mn_model (LV2_Handle instance)
 {
 	AVLSynth* self = (AVLSynth*)instance;
 	char inst[13];
-	char* rv = malloc (13 * sizeof (char));
-	sprintf (rv, "AVL-Drumkits");
+	char* rv = malloc (17 * sizeof (char));
+	sprintf (rv, "AVL-Drumkits-LV2");
 	snprintf (inst, 12, "%p", self);
 	memcpy (rv, inst, strlen(inst));
 	return rv;
