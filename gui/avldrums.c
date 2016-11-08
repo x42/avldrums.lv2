@@ -171,6 +171,8 @@ typedef struct {
 	int played_note;
 	int hover_note;
 	bool show_hotzones;
+	bool show_text;
+	uint8_t m_vel;
 
 	struct kGeometry* drumpos;
 
@@ -415,28 +417,27 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
 	// TODO !ui->kit_ready -> shade
 
 	if (ui->show_hotzones) {
-		//cairo_set_operator (cr, CAIRO_OPERATOR_OVERLAY);
-		cairo_set_operator (cr, CAIRO_OPERATOR_HSL_COLOR);
+		cairo_set_operator (cr, CAIRO_OPERATOR_OVERLAY);
 		cairo_set_source_surface (cr, ui->map_scaled, 0, 0);
-		cairo_paint (cr);
+		cairo_paint_with_alpha (cr, .65);
 	}
+
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 
 	/* prepare text */
-	cairo_set_line_width (cr, 1.5);
+	cairo_set_line_width (cr, 2.0);
 	PangoLayout* pl = pango_cairo_create_layout(cr);
 
 	for (int i = 0; i < DRUM_PCS; ++i) {
 		if (ui->kit_anim[i] <= 0) { continue; }
 
-#if 1
 		struct kGeometry* g = &ui->drumpos[i];
-		int xoff = SW (g->cx - g->dx);
-		int yoff = SH (g->cy - g->dy);
+		const int xoff = SW (g->cx - g->dx);
+		const int yoff = SH (g->cy - g->dy);
 
 		// hack for 'difference' :(
-		const double br = .3 + .7 * ui->kit_anim[i];
-		const double bg = .3 + .7 * ui->kit_anim[i] * (1.f - ui->kit_velo[i] / 127.f);
+		double br = .3 + .7 * ui->kit_anim[i];
+		double bg = .3 + .7 * ui->kit_anim[i] * (ui->kit_velo[i] / 127.f);
 		float clr[4];
 		clr[2] = br * .8 * ui->kit_anim[i];
 		clr[1] = bg * .8 * ui->kit_anim[i];
@@ -453,47 +454,49 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
 		//cairo_paint_with_alpha (cr, .5 * ui->kit_anim[i]);
 		cairo_restore (cr);
 
-		static const float dti = 1/15.f;
-		if (ui->kit_anim[i] > dti) {
-			ui->kit_anim[i] -= dti;
+		float dt = 1 / 15.f;
+
+		int tw = 0;
+		int th = 0;
+		double cx = 0;
+		double cy = 0;
+		if (ui->show_text) {
+			bg = .2 + .8 * ui->kit_anim[i] * (1.f - ui->kit_velo[i] / 127.f);
+			char txt[64];
+			float c_txt[4];
+			float c_out[4];
+			c_txt[0] = br;
+			c_txt[1] = bg;
+			c_txt[2] = .3;
+			c_txt[3] = .9 * ui->kit_anim[i];
+			c_out[0] = c_out[1] = c_out[2] = 0;
+			c_out[3] = .9 * ui->kit_anim[i];
+
+			float anim = 1 - ui->kit_anim[i];
+			cx = SW (ui->drumpos[i].cx);
+			cy = SH (ui->drumpos[i].cy - anim * 0.1);
+			snprintf (txt, sizeof(txt), "%s\n(%d)", drumnames[i], ui->kit_velo[i]);
+			txt[sizeof(txt) - 1] = 0;
+
+			outline_text (cr, pl, ui->font[0], txt, cx, cy, 1 + .15 * anim, c_txt, c_out, &tw, &th);
+			dt = 1 / 25.f;
+		}
+
+		if (ui->kit_anim[i] > dt) {
+			ui->kit_anim[i] -= dt;
 			queue_drum_expose (ui, i);
+			if (tw > 0) {
+				queue_draw_area (ui->rw, cx - tw * .6, cy - th * .6, tw * 1.2, th * 1.2);
+			}
 		} else if (ui->kit_anim[i] > 0) {
 			ui->kit_anim[i] = 0;
 			queue_drum_expose (ui, i);
+			if (tw > 0) {
+				queue_draw_area (ui->rw, cx - tw * .6, cy - th * .6, tw * 1.2, th * 1.2);
+			}
 		} else {
 			ui->kit_anim[i] = 0;
 		}
-#else
-		const double br = .3 + .7 * ui->kit_anim[i];
-		const double bg = .3 + .7 * ui->kit_anim[i] * (1.f - ui->kit_velo[i] / 127.f);
-		float c_txt[4];
-		float c_out[4];
-		c_txt[0] = br;
-		c_txt[1] = bg;
-		c_txt[2] = .3;
-		c_txt[3] = .9 * ui->kit_anim[i];
-		c_out[0] = c_out[1] = c_out[2] = 0;
-		c_out[3] = .9 * ui->kit_anim[i];
-
-		int tw, th;
-		float anim = 1 - ui->kit_anim[i];
-		float yoff = anim * 0.1;
-		double cx = SW (ui->drumpos[i].cx);
-		double cy = SH (ui->drumpos[i].cy - yoff);
-
-		outline_text (cr, pl, ui->font[0], drumnames[i], cx, cy, 1 + .15 * anim, c_txt, c_out, &tw, &th);
-
-		static const float dtt = 1/25.f;
-		if (ui->kit_anim[i] > dtt) {
-			ui->kit_anim[i] -= dtt;
-			queue_draw_area (ui->rw, cx - tw * .6, cy - th * .6, tw * 1.2, th * 1.2);
-		} else if (ui->kit_anim[i] > 0) {
-			ui->kit_anim[i] = 0;
-			queue_draw_area (ui->rw, cx - tw * .6, cy - th * .6, tw * 1.2, th * 1.2);
-		} else {
-			ui->kit_anim[i] = 0;
-		}
-#endif
 	}
 
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
@@ -606,10 +609,16 @@ mousedown (RobWidget* handle, RobTkBtnEvent *ev)
 		return NULL;
 	}
 
+	if ((ev->x / (double) ui->width) > (ui->kit == RedZeppelin ? 0.73 : .77) && (ev->y / (double) ui->height) < .09) {
+		ui->show_hotzones = true;
+		queue_draw (ui->rw);
+		return handle;
+	}
+
 	int n = find_note (ui, ev);
 	if (n >= 0) {
 		ui->played_note = n + 36;
-		forge_note (ui, ui->played_note, 0x7f); // TODO velocity
+		forge_note (ui, ui->played_note, ui->m_vel);
 	}
 	return handle;
 }
@@ -621,13 +630,45 @@ mouseup (RobWidget* handle, RobTkBtnEvent *ev)
 	if (ui->played_note >= 0) {
 		forge_note (ui, ui->played_note, 0);
 	} else if ((ev->x / (double) ui->width) > .9 && (ev->y / (double) ui->height) > .875) {
-		ui->show_hotzones = !ui->show_hotzones;
+		ui->show_text = !ui->show_text;
+		queue_draw (ui->rw);
+	}
+	if (ui->show_hotzones) {
+		ui->show_hotzones = false;
 		queue_draw (ui->rw);
 	}
 	ui->played_note = -1;
 #ifdef DEVELOP
 	queue_draw (ui->rw);
 #endif
+	return NULL;
+}
+
+static RobWidget*
+mousescroll (RobWidget* handle, RobTkBtnEvent *ev)
+{
+	AvlDrumsLV2UI* ui = (AvlDrumsLV2UI*)GET_HANDLE (handle);
+	bool changed = false;
+	switch (ev->direction) {
+		case ROBTK_SCROLL_RIGHT:
+		case ROBTK_SCROLL_UP:
+			if (ui->m_vel < 127) {
+				++ui->m_vel;
+				changed = true;
+			}
+			break;
+		case ROBTK_SCROLL_LEFT:
+		case ROBTK_SCROLL_DOWN:
+			if (ui->m_vel > 1) {
+				--ui->m_vel;
+				changed = true;
+			}
+			break;
+	}
+	if (changed) {
+		// TODO display vel
+		//queue_draw (ui->rw);
+	}
 	return NULL;
 }
 
@@ -727,16 +768,18 @@ instantiate (
 		return NULL;
 	}
 
-	ui->write        = write_function;
-	ui->controller   = controller;
-	ui->nfo          = robtk_info (ui_toplevel);
-	ui->played_note  = -1;
-	ui->hover_note   = -1;
-	ui->kit_ready    = false;
-	ui->png_readoff  = 0;
-	ui->map_readoff  = 0;
-	ui->size_changed = true;
+	ui->write         = write_function;
+	ui->controller    = controller;
+	ui->nfo           = robtk_info (ui_toplevel);
+	ui->played_note   = -1;
+	ui->hover_note    = -1;
+	ui->kit_ready     = false;
+	ui->png_readoff   = 0;
+	ui->map_readoff   = 0;
+	ui->size_changed  = true;
 	ui->show_hotzones = false;
+	ui->show_text     = false;
+	ui->m_vel         = 100;
 
 	switch (ui->kit) {
 		case RedZeppelin:
@@ -771,6 +814,7 @@ instantiate (
 	robwidget_set_mouseup (ui->rw, mouseup);
 	robwidget_set_mousedown (ui->rw, mousedown);
 	robwidget_set_mousemove (ui->rw, mousemove);
+	robwidget_set_mousescroll (ui->rw, mousescroll);
 
 	ui->bg = cairo_image_surface_create_from_png_stream (img_png_read, ui);
 	ui->map = cairo_image_surface_create_from_png_stream (map_png_read, ui);
