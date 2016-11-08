@@ -24,6 +24,7 @@
 #include <math.h>
 
 #include "../src/avldrums.h"
+#include "../gui/cairoblur.h"
 
 #define RTK_URI AVL_URI
 #define RTK_GUI "ui"
@@ -391,6 +392,7 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
 			}
 
 			cairo_surface_mark_dirty(ui->anim_alpha[i]);
+			blur_image_surface(ui->anim_alpha[i], ww);
 		}
 
 		ui->size_changed = false;
@@ -613,16 +615,14 @@ mousedown (RobWidget* handle, RobTkBtnEvent *ev)
 }
 
 static RobWidget*
-mouseup (RobWidget* handle, RobTkBtnEvent *event)
+mouseup (RobWidget* handle, RobTkBtnEvent *ev)
 {
 	AvlDrumsLV2UI* ui = (AvlDrumsLV2UI*)GET_HANDLE (handle);
 	if (ui->played_note >= 0) {
 		forge_note (ui, ui->played_note, 0);
-#if 1 // TODO dedicated area
-	} else {
+	} else if ((ev->x / (double) ui->width) > .9 && (ev->y / (double) ui->height) > .875) {
 		ui->show_hotzones = !ui->show_hotzones;
 		queue_draw (ui->rw);
-#endif
 	}
 	ui->played_note = -1;
 #ifdef DEVELOP
