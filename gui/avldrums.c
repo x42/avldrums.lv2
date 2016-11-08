@@ -367,7 +367,7 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
 			int yoff = SH (g->cy - g->dy);
 
 			if (ui->anim_alpha[i]) { cairo_surface_destroy (ui->anim_alpha[i]); }
-			ui->anim_alpha[i] = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, ww, hh);
+			ui->anim_alpha[i] = cairo_image_surface_create (CAIRO_FORMAT_A8, ww, hh);
 
 			int src_stride = cairo_image_surface_get_stride (ui->map_scaled);
 			int dst_stride = cairo_image_surface_get_stride (ui->anim_alpha[i]);
@@ -381,14 +381,10 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
 				for (int xx = 0; xx < ww; ++xx) {
 					if (xx + xoff < 0 || xx + xoff >= ui->width) { continue; }
 					uint32_t sp = sy + (xx + xoff) * 4;
-					uint32_t dp = dy + xx * 4;
+					uint32_t dp = dy + xx;
 
-					if (i == ((src[sp+2] & 0xff) - 10) / 9) {
-						//printf("SET %d  %d %d\n",i, xx, yy);
-						dst[dp + 3] = 0xff;
-						dst[dp + 2] = 0xff;
-						dst[dp + 1] = 0xff;
-						dst[dp] = 0xff;
+					if (i * 9 == ((src[sp+2] & 0xff) - 10)) {
+						dst[dp    ] = 0xff;
 					}
 
 				}
@@ -435,12 +431,24 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
 		struct kGeometry* g = &ui->drumpos[i];
 		int xoff = SW (g->cx - g->dx);
 		int yoff = SH (g->cy - g->dy);
+
+		// hack for 'difference' :(
+		const double br = .3 + .7 * ui->kit_anim[i];
+		const double bg = .3 + .7 * ui->kit_anim[i] * (1.f - ui->kit_velo[i] / 127.f);
+		float clr[4];
+		clr[2] = br * .8 * ui->kit_anim[i];
+		clr[1] = bg * .8 * ui->kit_anim[i];
+		clr[0] = 0 ; // .3 * .5 * ui->kit_anim[i];
+		clr[3] = 1.0;
+
 		cairo_save (cr);
-		// TODO surface mask & color..
-		cairo_set_source_surface (cr, ui->anim_alpha[i], xoff, yoff);
+		// TODO find a way to alpha-mask AND paint with custom alpha.
+		cairo_set_operator (cr, CAIRO_OPERATOR_DIFFERENCE);
 		cairo_rectangle (cr, xoff, yoff, SW (2 * g->dx), SH (2 * g->dy));
 		cairo_clip (cr);
-		cairo_paint_with_alpha (cr, .7 * ui->kit_anim[i]);
+		CairoSetSouerceRGBA (clr);
+		cairo_mask_surface (cr, ui->anim_alpha[i], xoff, yoff);
+		//cairo_paint_with_alpha (cr, .5 * ui->kit_anim[i]);
 		cairo_restore (cr);
 
 		static const float dti = 1/15.f;
@@ -485,6 +493,8 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
 		}
 #endif
 	}
+
+	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 
 	if (ui->hover_note >= 0) {
 		const int i = ui->hover_note;
