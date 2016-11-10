@@ -27,19 +27,27 @@
       lv2:index 7 ;
       lv2:symbol "out6" ;
       lv2:name "Cymbals L" ;
+      lv2:designation pg:left ;
+      pg:group @LV2NAME@:Cymbals;
   ] , [
       a lv2:OutputPort, lv2:AudioPort ;
       lv2:index 8 ;
       lv2:symbol "out7" ;
       lv2:name "Cymbals R" ;
+      lv2:designation pg:right ;
+      pg:group @LV2NAME@:Cymbals;
   ] , [
       a lv2:OutputPort, lv2:AudioPort ;
       lv2:index 9 ;
       lv2:symbol "out8" ;
       lv2:name "Percussions L" ;
+      lv2:designation pg:left ;
+      pg:group @LV2NAME@:Percussions;
   ] , [
       a lv2:OutputPort, lv2:AudioPort ;
       lv2:index 10 ;
       lv2:symbol "out9" ;
       lv2:name "Percussions R" ;
+      lv2:designation pg:right ;
+      pg:group @LV2NAME@:Percussions;
   ] .

@@ -217,11 +217,11 @@ $(BUILDDIR)$(LV2NAME).ttl: Makefile lv2ttl/$(LV2NAME).*.in
 		lv2ttl/$(LV2NAME).stereo.ttl.in >> $(BUILDDIR)$(LV2NAME).ttl
 	sed "s/@LV2NAME@/$(LV2NAME)/g;s/@NAME@/Black Pearl Drumkit Multi/g;s/@VARIANT@/BlackPearlMulti/g;s/@SIGNATURE@/$(SIGNATURE)/;s/@VERSION@/lv2:microVersion $(LV2MIC) ;lv2:minorVersion $(LV2MIN) ;/g;s/@UITTL@/$(UITTL)/" \
 		lv2ttl/$(LV2NAME).ttl.in >> $(BUILDDIR)$(LV2NAME).ttl
-	cat \
+	sed "s/@LV2NAME@/$(LV2NAME)/g" \
 		lv2ttl/$(LV2NAME).multi.ttl.in >> $(BUILDDIR)$(LV2NAME).ttl
 	sed "s/@LV2NAME@/$(LV2NAME)/g;s/@NAME@/Red Zeppelin Drumkit Multi/g;s/@VARIANT@/RedZeppelinMulti/g;s/@SIGNATURE@/$(SIGNATURE)/;s/@VERSION@/lv2:microVersion $(LV2MIC) ;lv2:minorVersion $(LV2MIN) ;/g;s/@UITTL@/$(UITTL)/" \
 		lv2ttl/$(LV2NAME).ttl.in >> $(BUILDDIR)$(LV2NAME).ttl
-	cat \
+	sed "s/@LV2NAME@/$(LV2NAME)/g" \
 		lv2ttl/$(LV2NAME).multi.ttl.in >> $(BUILDDIR)$(LV2NAME).ttl
 ifneq ($(BUILDOPENGL), no)
 	sed "s/@LV2NAME@/$(LV2NAME)/g;s/@UI_TYPE@/$(UI_TYPE)/;s/@UI_REQ@/$(LV2UIREQ)/" \

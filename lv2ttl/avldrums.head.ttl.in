@@ -3,6 +3,7 @@
 @prefix foaf:  <http://xmlns.com/foaf/0.1/> .
 @prefix lv2:   <http://lv2plug.in/ns/lv2core#> .
 @prefix midi:  <http://lv2plug.in/ns/ext/midi#> .
+@prefix pg:    <http://lv2plug.in/ns/ext/port-groups#> .
 @prefix pprop: <http://lv2plug.in/ns/ext/port-props#> .
 @prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs:  <http://www.w3.org/2000/01/rdf-schema#> .
@@ -19,4 +20,28 @@
   foaf:name "Robin Gareus";
   foaf:mbox <mailto:robin@gareus.org>;
   foaf:homepage <http://gareus.org/> .
+
+@LV2NAME@:Cymbals
+  a pg:OutputGroup, pg:DiscreteGroup;
+	lv2:symbol "Cymbals" ;
+	rdfs:label "Cymbals" ;
+	pg:element [
+		lv2:index 0 ;
+		lv2:designation pg:left
+	] , [
+		lv2:index 1 ;
+		lv2:designation pg:right
+	] .
+
+@LV2NAME@:Percussions
+	a pg:OutputGroup, pg:DiscreteGroup;
+	lv2:symbol "Percussions" ;
+	rdfs:label "Percussions" ;
+	pg:element [
+		lv2:index 0 ;
+		lv2:designation pg:left
+	] , [
+		lv2:index 1 ;
+		lv2:designation pg:right
+	] .
 
