@@ -675,6 +675,13 @@ static RobWidget*
 mouseup (RobWidget* handle, RobTkBtnEvent *ev)
 {
 	AvlDrumsLV2UI* ui = (AvlDrumsLV2UI*)GET_HANDLE (handle);
+
+	if (ev->button == 3 && !ui->show_menu) {
+		ui->show_menu = true;
+		queue_draw (ui->rw);
+		return NULL;
+	}
+
 	if (ev->button != 1) {
 		return NULL;
 	}
@@ -706,13 +713,6 @@ mouseup (RobWidget* handle, RobTkBtnEvent *ev)
 				break;
 		}
 		ui->show_menu = false;
-		queue_draw (ui->rw);
-		return NULL;
-	}
-
-	/* bottom right (context-menu) */
-	if ((ev->x / (double) ui->width) > .9 && (ev->y / (double) ui->height) > .875) {
-		ui->show_menu = true;
 		queue_draw (ui->rw);
 		return NULL;
 	}
