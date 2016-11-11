@@ -171,7 +171,9 @@ typedef struct {
 	int played_note;
 	int hover_note;
 	bool show_hotzones;
+	bool show_highlight;
 	bool show_text;
+	bool show_menu;
 	uint8_t m_vel;
 
 	struct kGeometry* drumpos;
@@ -431,37 +433,40 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
 	for (int i = 0; i < DRUM_PCS; ++i) {
 		if (ui->kit_anim[i] <= 0) { continue; }
 
-		struct kGeometry* g = &ui->drumpos[i];
-		const int xoff = SW (g->cx - g->dx);
-		const int yoff = SH (g->cy - g->dy);
-
-		// hack for 'difference' :(
-		double br = .3 + .7 * ui->kit_anim[i];
-		double bg = .3 + .7 * ui->kit_anim[i] * (ui->kit_velo[i] / 127.f);
-		float clr[4];
-		clr[2] = br * .8 * ui->kit_anim[i];
-		clr[1] = bg * .8 * ui->kit_anim[i];
-		clr[0] = 0 ; // .3 * .5 * ui->kit_anim[i];
-		clr[3] = 1.0;
-
-		cairo_save (cr);
-		// TODO find a way to alpha-mask AND paint with custom alpha.
-		cairo_set_operator (cr, CAIRO_OPERATOR_DIFFERENCE);
-		cairo_rectangle (cr, xoff, yoff, SW (2 * g->dx), SH (2 * g->dy));
-		cairo_clip (cr);
-		CairoSetSouerceRGBA (clr);
-		cairo_mask_surface (cr, ui->anim_alpha[i], xoff, yoff);
-		//cairo_paint_with_alpha (cr, .5 * ui->kit_anim[i]);
-		cairo_restore (cr);
-
 		float dt = 1 / 15.f;
+		const double br = .3 + .7 * ui->kit_anim[i];
+
+		if (ui->show_highlight) {
+			struct kGeometry* g = &ui->drumpos[i];
+			const int xoff = SW (g->cx - g->dx);
+			const int yoff = SH (g->cy - g->dy);
+
+			// hack for 'difference' :(
+			double bg = .3 + .7 * ui->kit_anim[i] * (ui->kit_velo[i] / 127.f);
+			float clr[4];
+			clr[2] = br * .8 * ui->kit_anim[i];
+			clr[1] = bg * .8 * ui->kit_anim[i];
+			clr[0] = 0 ; // .3 * .5 * ui->kit_anim[i];
+			clr[3] = 1.0;
+
+			cairo_save (cr);
+			// TODO find a way to alpha-mask AND paint with custom alpha.
+			cairo_set_operator (cr, CAIRO_OPERATOR_DIFFERENCE);
+			cairo_rectangle (cr, xoff, yoff, SW (2 * g->dx), SH (2 * g->dy));
+			cairo_clip (cr);
+			CairoSetSouerceRGBA (clr);
+			cairo_mask_surface (cr, ui->anim_alpha[i], xoff, yoff);
+			//cairo_paint_with_alpha (cr, .5 * ui->kit_anim[i]);
+			cairo_restore (cr);
+		}
 
 		int tw = 0;
 		int th = 0;
 		double cx = 0;
 		double cy = 0;
+
 		if (ui->show_text) {
-			bg = .2 + .8 * ui->kit_anim[i] * (1.f - ui->kit_velo[i] / 127.f);
+			double bg = .2 + .8 * ui->kit_anim[i] * (1.f - ui->kit_velo[i] / 127.f);
 			char txt[64];
 			float c_txt[4];
 			float c_out[4];
@@ -500,8 +505,37 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
 	}
 
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
+	if (ui->show_menu) {
+		cairo_rectangle (cr, ev->x, ev->y, ev->width, ev->height);
+		cairo_set_source_rgba (cr, 0, 0, 0, 0.5);
+		cairo_fill (cr);
 
-	if (ui->hover_note >= 0) {
+		float bt_w = ui->width / 7.f;
+		float bt_h = ui->height / 3.f;
+		write_text_full (cr, "Display Animation Mode", ui->font[0], floor(ui->width * .5), floor(bt_h * 0.5), 0, 2, c_wht);
+		static const char* mode[3] = { "Text\nOnly", "Highlight\nOnly", "Text\nand\nHighlight"};
+		for (int i = 0; i < 3; ++i) {
+			float x0 = floor ((1 + 2 * i) * bt_w);
+			float y0 = floor (bt_h);
+			rounded_rectangle (cr, x0, y0, floor (bt_w), floor (bt_h), 8);
+			CairoSetSouerceRGBA(c_wht);
+			cairo_set_line_width(cr, 1.5);
+			cairo_stroke_preserve (cr);
+			cairo_set_source_rgba (cr, .2, .2, .2, 1.0);
+			if (ui->show_text && ui->show_highlight) {
+				if (i == 2) { cairo_set_source_rgba (cr, .1, .7, .1, 1.0); }
+			}
+			else if (ui->show_text) {
+				if (i == 0) { cairo_set_source_rgba (cr, .1, .7, .1, 1.0); }
+			}
+			else if (ui->show_highlight) {
+				if (i == 1) { cairo_set_source_rgba (cr, .1, .7, .1, 1.0); }
+			}
+			cairo_fill (cr);
+			write_text_full (cr, mode[i], ui->font[1], floor(x0 + bt_w * .5), floor(y0 + bt_h * .5), 0, 2, c_wht);
+		}
+	}
+	else if (ui->hover_note >= 0) {
 		char txt[128];
 		const int i = ui->hover_note;
 		outline_text (cr, pl, ui->font[1], drumnames[i],
@@ -585,14 +619,15 @@ mousemove (RobWidget* handle, RobTkBtnEvent *ev)
 		printf ("{ %f, %f, %f, %f },\n", ui->_xc, ui->_yc, ui->_xd, ui->_yd);
 		queue_draw (ui->rw);
 	}
-#else
+	return NULL;
+#endif
+
 	int n = find_note (ui, ev);
 	if (ui->hover_note != n) {
 		// TODO position.. + area
 		ui->hover_note = n;
 		queue_draw (ui->rw);
 	}
-#endif
 	return NULL;
 }
 
@@ -600,6 +635,9 @@ static RobWidget*
 mousedown (RobWidget* handle, RobTkBtnEvent *ev)
 {
 	AvlDrumsLV2UI* ui = (AvlDrumsLV2UI*)GET_HANDLE (handle);
+	if (ev->button != 1) {
+		return NULL;
+	}
 #ifdef DEVELOP
 	ui->_xc = ev->x / (double) ui->width;
 	ui->_yc = ev->y / (double) ui->height;
@@ -609,10 +647,16 @@ mousedown (RobWidget* handle, RobTkBtnEvent *ev)
 	queue_draw (ui->rw);
 #endif
 
+	if (ui->show_menu) {
+		// handle on mouse-up
+		return handle;
+	}
+
 	if (!ui->kit_ready) {
 		return NULL;
 	}
 
+	/* top-right (kit-name) */
 	if ((ev->x / (double) ui->width) > (ui->kit == RedZeppelin ? 0.73 : .77) && (ev->y / (double) ui->height) < .09) {
 		ui->show_hotzones = true;
 		queue_draw (ui->rw);
@@ -631,11 +675,50 @@ static RobWidget*
 mouseup (RobWidget* handle, RobTkBtnEvent *ev)
 {
 	AvlDrumsLV2UI* ui = (AvlDrumsLV2UI*)GET_HANDLE (handle);
+	if (ev->button != 1) {
+		return NULL;
+	}
+
+	if (ui->show_menu) {
+		float bt_w = ui->width / 7.f;
+		float bt_h = ui->height / 3.f;
+		int xp = floor (ev->x / bt_w);
+		int yp = floor (ev->y / bt_h);
+		if ((xp & 1) == 0 || (yp & 1) == 0) {
+			return NULL;
+		}
+		const int pos = (xp - 1) / 2;
+		switch (pos) {
+			case 0:
+				ui->show_text = true;
+				ui->show_highlight = false;
+				break;
+			case 1:
+				ui->show_text = false;
+				ui->show_highlight = true;
+				break;
+			case 2:
+				ui->show_text = true;
+				ui->show_highlight = true;
+				break;
+			default:
+				return NULL;
+				break;
+		}
+		ui->show_menu = false;
+		queue_draw (ui->rw);
+		return NULL;
+	}
+
+	/* bottom right (context-menu) */
+	if ((ev->x / (double) ui->width) > .9 && (ev->y / (double) ui->height) > .875) {
+		ui->show_menu = true;
+		queue_draw (ui->rw);
+		return NULL;
+	}
+
 	if (ui->played_note >= 0) {
 		forge_note (ui, ui->played_note, 0);
-	} else if ((ev->x / (double) ui->width) > .9 && (ev->y / (double) ui->height) > .875) {
-		ui->show_text = !ui->show_text;
-		queue_draw (ui->rw);
 	}
 	if (ui->show_hotzones) {
 		ui->show_hotzones = false;
@@ -772,18 +855,20 @@ instantiate (
 		return NULL;
 	}
 
-	ui->write         = write_function;
-	ui->controller    = controller;
-	ui->nfo           = robtk_info (ui_toplevel);
-	ui->played_note   = -1;
-	ui->hover_note    = -1;
-	ui->kit_ready     = false;
-	ui->png_readoff   = 0;
-	ui->map_readoff   = 0;
-	ui->size_changed  = true;
-	ui->show_hotzones = false;
-	ui->show_text     = false;
-	ui->m_vel         = 100;
+	ui->write          = write_function;
+	ui->controller     = controller;
+	ui->nfo            = robtk_info (ui_toplevel);
+	ui->played_note    = -1;
+	ui->hover_note     = -1;
+	ui->kit_ready      = false;
+	ui->png_readoff    = 0;
+	ui->map_readoff    = 0;
+	ui->size_changed   = true;
+	ui->show_hotzones  = false;
+	ui->show_text      = false;
+	ui->show_highlight = true;
+	ui->show_menu      = false;
+	ui->m_vel          = 100;
 
 	switch (ui->kit) {
 		case RedZeppelin:
