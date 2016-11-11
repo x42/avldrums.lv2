@@ -502,13 +502,13 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 
 	if (ui->hover_note >= 0) {
-		char txt[64];
+		char txt[128];
 		const int i = ui->hover_note;
 		outline_text (cr, pl, ui->font[1], drumnames[i],
 				SW (ui->drumpos[i].cx), SH (ui->drumpos[i].cy), 1.0,
 				c_wht, c_blk, NULL, NULL);
 
-		snprintf (txt, sizeof(txt), " Audition Velocity: %d (change with mouse-wheel) ", ui->m_vel);
+		snprintf (txt, sizeof(txt), "<markup> Audition Velocity: %3d <small><i>(change with mouse-wheel)</i></small> </markup>", ui->m_vel);
 		write_text_full (cr, txt, ui->font[1], 0, ui->height, 0, -6, c_wht);
 	}
 	g_object_unref(pl);
