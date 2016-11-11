@@ -502,10 +502,14 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
 	cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
 
 	if (ui->hover_note >= 0) {
+		char txt[64];
 		const int i = ui->hover_note;
 		outline_text (cr, pl, ui->font[1], drumnames[i],
 				SW (ui->drumpos[i].cx), SH (ui->drumpos[i].cy), 1.0,
 				c_wht, c_blk, NULL, NULL);
+
+		snprintf (txt, sizeof(txt), " Audition Velocity: %d (change with mouse-wheel) ", ui->m_vel);
+		write_text_full (cr, txt, ui->font[1], 0, ui->height, 0, -6, c_wht);
 	}
 	g_object_unref(pl);
 
@@ -666,8 +670,8 @@ mousescroll (RobWidget* handle, RobTkBtnEvent *ev)
 			break;
 	}
 	if (changed) {
-		// TODO display vel
-		//queue_draw (ui->rw);
+		int h = 20 * ui->scale;
+		queue_draw_area (ui->rw, 0, ui->height - h, ui->width, h);
 	}
 	return NULL;
 }
@@ -806,10 +810,10 @@ instantiate (
 	robwidget_make_toplevel (ui->rw, ui_toplevel);
 	ROBWIDGET_SETNAME (ui->rw, "drums");
 
-	robwidget_set_expose_event (ui->rw, expose_event); // depending on kit
+	robwidget_set_expose_event (ui->rw, expose_event);
 	robwidget_set_size_request (ui->rw, size_request);
 	robwidget_set_size_allocate (ui->rw, size_allocate);
-	robwidget_set_size_limit (ui->rw, size_limit); // XXX
+	robwidget_set_size_limit (ui->rw, size_limit);
 	robwidget_set_size_default (ui->rw, size_request);
 	robwidget_set_mouseup (ui->rw, mouseup);
 	robwidget_set_mousedown (ui->rw, mousedown);
