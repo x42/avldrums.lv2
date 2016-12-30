@@ -20,4 +20,18 @@ submodule_check:
 	  | grep -q "^+" \
 	  && $(MAKE) submodule_update || true
 
-.PHONY: submodule_check submodules submodule_update submodule_pull
+TARNAME = avldrums.lv2
+TARF=$(TARNAME)-$(VERSION).tar
+
+dist: submodule_check
+	$(eval VERSION := $(shell git describe --tags HEAD 2>/dev/null))
+	git archive --prefix=$(TARNAME)-$(VERSION)/ --format tar HEAD > $(TARF)
+	$(eval TEMPFILE := $(shell mktemp))
+	git submodule foreach \
+		"git archive --prefix=$(TARNAME)-$(VERSION)/"'$$(basename $$(pwd))/'" --format tar HEAD > $(TEMPFILE); \
+		tar --concatenate -f ../$(TARF) $(TEMPFILE)";
+	rm $(TEMPFILE)
+	xz $(TARF)
+	ls -l $(TARF).xz
+
+.PHONY: submodule_check submodules submodule_update submodule_pull dist
