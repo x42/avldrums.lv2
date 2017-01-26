@@ -81,7 +81,7 @@ endif
 ifeq ($(UI_TYPE),)
   UI_TYPE=kx:Widget
   LV2UIREQ+=lv2:requiredFeature kx:Widget;
-  override CXXFLAGS += -DXTERNAL_UI
+  override CFLAGS += -DXTERNAL_UI
 endif
 
 targets+=$(BUILDDIR)$(LV2NAME)$(LIB_EXT)
