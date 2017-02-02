@@ -414,6 +414,11 @@ run (LV2_Handle instance, uint32_t n_samples)
 	if (!self->initialized || self->reinit_in_progress) {
 		memset (self->p_ports[AVL_PORT_OUT_L], 0, n_samples * sizeof (float));
 		memset (self->p_ports[AVL_PORT_OUT_R], 0, n_samples * sizeof (float));
+		if (self->multi_out) {
+			for (uint32_t cc = AVL_PORT_OUT_HiHat; cc < AVL_PORT_LAST; ++cc) {
+				memset (self->p_ports[cc], 0, n_samples * sizeof (float));
+			}
+		}
 	} else if (self->panic) {
 		fluid_synth_all_notes_off (self->synth, -1);
 		fluid_synth_all_sounds_off (self->synth, -1);
