@@ -21,3 +21,15 @@ If you want to create a fork, a modified version, of this sample library
 you have to release and distribute it under a different name.
 
 http://creativecommons.org/licenses/by-sa/3.0/
+
+
+NOTE
+====
+
+These files were modified from the original .sf2 files from
+http://www.bandshed.net/avldrumkits/
+
+ - The panning was changed to match the layout as displayed on the images
+   (hand-clap, maracas, tambourine)
+ - silence was cut at the start of some samples
+ - exclusive class groups were added for hi-hat and all cymbals.
