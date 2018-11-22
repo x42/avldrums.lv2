@@ -105,12 +105,12 @@ load_sf2 (AVLSynth* self, const char* fn)
 	}
 
 	int chn = 0;
-	fluid_preset_t preset;
-	sfont->iteration_start (sfont);
-	if (sfont->iteration_next (sfont, &preset)) {
+	fluid_preset_t* preset;
+	fluid_sfont_iteration_start (sfont);
+	if ((preset = fluid_sfont_iteration_next (sfont))) {
 		for (chn = 0; chn < 16; ++chn) {
 			fluid_synth_program_select (self->synth, chn, synth_id,
-					preset.get_banknum (&preset), preset.get_num (&preset));
+					fluid_preset_get_banknum (preset), fluid_preset_get_num (preset));
 		}
 	}
 
