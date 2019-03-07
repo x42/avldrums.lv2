@@ -319,7 +319,6 @@ instantiate (const LV2_Descriptor*     descriptor,
 	}
 
 	fluid_settings_setnum (self->settings, "synth.sample-rate", rate);
-	fluid_settings_setint (self->settings, "synth.parallel-render", 1);
 	fluid_settings_setint (self->settings, "synth.threadsafe-api", 0);
 
 	if (multi_out) {
