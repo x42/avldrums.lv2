@@ -19,7 +19,7 @@
  */
 
 
-/**
+/*
  * @file fluid_sys.h
  *
  * This header contains a bunch of (mostly) system and machine
@@ -486,7 +486,7 @@ fluid_ostream_t fluid_socket_get_ostream(fluid_socket_t sock);
 typedef GStatBuf fluid_stat_buf_t;
 #endif
 
-#define fluid_file_test g_file_test
+FILE* fluid_file_open(const char* filename, const char** errMsg);
 
 /* Profiling */
 #if WITH_PROFILING
@@ -707,13 +707,13 @@ enum
 #ifdef FPE_CHECK
 #define fluid_check_fpe(expl) fluid_check_fpe_i386(expl)
 #define fluid_clear_fpe() fluid_clear_fpe_i386()
+unsigned int fluid_check_fpe_i386(char *explanation_in_case_of_fpe);
+void fluid_clear_fpe_i386(void);
 #else
 #define fluid_check_fpe(expl)
 #define fluid_clear_fpe()
 #endif
 
-unsigned int fluid_check_fpe_i386(char *explanation_in_case_of_fpe);
-void fluid_clear_fpe_i386(void);
 
 /* System control */
 void fluid_msleep(unsigned int msecs);
