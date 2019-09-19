@@ -542,7 +542,11 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
 				SW (ui->drumpos[i].cx), SH (ui->drumpos[i].cy), 1.0,
 				c_wht, c_blk, NULL, NULL);
 
-		snprintf (txt, sizeof(txt), "<markup> Audition Velocity: %3d <small><i>(change with mouse-wheel)</i></small> </markup>", ui->m_vel);
+		static const char notename[12][3] = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
+		int mn = (ui->hover_note + 36) % 12;
+		int mo = (ui->hover_note + 36) / 12 - 1;
+
+		snprintf (txt, sizeof(txt), "<markup> Audition Velocity: %3d <small><i>(change with mouse-wheel)</i></small>  -  MIDI-Note: %-2s%d (%d)</markup>", ui->m_vel, notename[mn], mo, 36 + ui->hover_note);
 		write_text_full (cr, txt, ui->font[1], 0, ui->height, 0, -6, c_wht);
 	}
 	g_object_unref(pl);
