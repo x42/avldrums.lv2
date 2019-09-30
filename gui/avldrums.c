@@ -536,7 +536,7 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
 		}
 	}
 	else if (ui->hover_note >= 0) {
-		char txt[128];
+		char txt[192];
 		const int i = ui->hover_note;
 		outline_text (cr, pl, ui->font[1], drumnames[i],
 				SW (ui->drumpos[i].cx), SH (ui->drumpos[i].cy), 1.0,
