@@ -142,26 +142,24 @@ synth_sound (AVLSynth* self, uint32_t n_samples, uint32_t offset)
 	if (self->multi_out) {
 		while (n_samples > 0) {
 			uint32_t n = n_samples > 8192 ? 8192 : n_samples;
-			float scratch[8192];
-			float* l[7];
-			float* r[7];
+			float* out[14];
 
-			l[0] = &self->p_ports[AVL_PORT_OUT_Kick][offset];
-			r[0] = scratch;
-			l[1] = &self->p_ports[AVL_PORT_OUT_Snare][offset];
-			r[1] = scratch;
-			l[2] = &self->p_ports[AVL_PORT_OUT_HiHat][offset];
-			r[2] = scratch;
-			l[3] = &self->p_ports[AVL_PORT_OUT_Tom][offset];
-			r[3] = scratch;
-			l[4] = &self->p_ports[AVL_PORT_OUT_FloorTom][offset];
-			r[4] = scratch;
-			l[5] = &self->p_ports[AVL_PORT_OUT_Overheads_L][offset];
-			r[5] = &self->p_ports[AVL_PORT_OUT_Overheads_R][offset];
-			l[6] = &self->p_ports[AVL_PORT_OUT_Percussion_L][offset];
-			r[6] = &self->p_ports[AVL_PORT_OUT_Percussion_R][offset];
+			out[0]  = &self->p_ports[AVL_PORT_OUT_Kick][offset];
+			out[1]  = NULL;
+			out[2]  = &self->p_ports[AVL_PORT_OUT_Snare][offset];
+			out[3]  = NULL;
+			out[4]  = &self->p_ports[AVL_PORT_OUT_HiHat][offset];
+			out[5]  = NULL;
+			out[6]  = &self->p_ports[AVL_PORT_OUT_Tom][offset];
+			out[7]  = NULL;
+			out[8]  = &self->p_ports[AVL_PORT_OUT_FloorTom][offset];
+			out[9]  = NULL;
+			out[10] = &self->p_ports[AVL_PORT_OUT_Overheads_L][offset];
+			out[11] = &self->p_ports[AVL_PORT_OUT_Overheads_R][offset];
+			out[12] = &self->p_ports[AVL_PORT_OUT_Percussion_L][offset];
+			out[13] = &self->p_ports[AVL_PORT_OUT_Percussion_R][offset];
 
-			fluid_synth_nwrite_float (self->synth, n, l, r, NULL, NULL);
+			fluid_synth_process (self->synth, n, 0, NULL, 14, out);
 			n_samples -= n;
 			offset += n;
 		}
@@ -410,7 +408,7 @@ run (LV2_Handle instance, uint32_t n_samples)
 	lv2_atom_forge_set_buffer (&self->forge, (uint8_t*)self->notify, capacity);
 	lv2_atom_forge_sequence_head (&self->forge, &self->frame, 0);
 
-	if (!self->initialized || self->reinit_in_progress) {
+	if (self->multi_out || !self->initialized || self->reinit_in_progress) {
 		memset (self->p_ports[AVL_PORT_OUT_L], 0, n_samples * sizeof (float));
 		memset (self->p_ports[AVL_PORT_OUT_R], 0, n_samples * sizeof (float));
 		if (self->multi_out) {
