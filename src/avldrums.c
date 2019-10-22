@@ -50,7 +50,7 @@ enum {
 typedef struct {
 	/* ports */
 	const LV2_Atom_Sequence* control;
-  LV2_Atom_Sequence*       notify;
+	LV2_Atom_Sequence*       notify;
 
 	float* p_ports[AVL_PORT_LAST];
 
@@ -65,7 +65,7 @@ typedef struct {
 	/* lv2 extensions */
 	LV2_Log_Log*         log;
 	LV2_Log_Logger       logger;
-  LV2_Worker_Schedule* schedule;
+	LV2_Worker_Schedule* schedule;
 	LV2_Midnam*          midnam;
 	LV2_Atom_Forge       forge;
 	LV2_Atom_Forge_Frame frame;
@@ -165,7 +165,7 @@ synth_sound (AVLSynth* self, uint32_t n_samples, uint32_t offset)
 			n_samples -= n;
 			offset += n;
 		}
-	}  else {
+	} else {
 		fluid_synth_write_float (
 				self->synth,
 				n_samples,
@@ -302,7 +302,7 @@ instantiate (const LV2_Descriptor*     descriptor,
 	snprintf (self->queue_sf2_file_path, sizeof (self->queue_sf2_file_path), "%s" PATH_SEP "%s",
 			bundle_path, kits[kit]);
 	self->queue_sf2_file_path[sizeof(self->queue_sf2_file_path) - 1] = '\0';
-	
+
 	if (!file_exists (self->queue_sf2_file_path)) {
 		lv2_log_error (&self->logger, "avldrums.lv2: Cannot find drumkit soundfont: '%s'\n", self->queue_sf2_file_path);
 		free (self);
@@ -334,7 +334,7 @@ instantiate (const LV2_Descriptor*     descriptor,
 
 	if (!self->synth) {
 		lv2_log_error (&self->logger, "avldrums.lv2: cannot allocate Fluid Synth\n");
-    delete_fluid_settings (self->settings);
+		delete_fluid_settings (self->settings);
 		free (self);
 		return NULL;
 	}
@@ -348,7 +348,7 @@ instantiate (const LV2_Descriptor*     descriptor,
 	if (!self->fmidi_event) {
 		lv2_log_error (&self->logger, "avldrums.lv2: cannot allocate Fluid Event\n");
 		delete_fluid_synth (self->synth);
-    delete_fluid_settings (self->settings);
+		delete_fluid_settings (self->settings);
 		free (self);
 		return NULL;
 	}
@@ -370,8 +370,8 @@ instantiate (const LV2_Descriptor*     descriptor,
 
 static void
 connect_port (LV2_Handle instance,
-              uint32_t   port,
-              void*      data)
+			  uint32_t   port,
+			  void*      data)
 {
 	AVLSynth* self = (AVLSynth*)instance;
 
@@ -435,13 +435,12 @@ run (LV2_Handle instance, uint32_t n_samples)
 			const LV2_Atom_Object* obj = (LV2_Atom_Object*)&ev->body;
 			if (obj->body.otype == self->uris.ui_off) {
 				self->ui_active = false;
-			}
-			else if (obj->body.otype == self->uris.ui_on) {
+			} else if (obj->body.otype == self->uris.ui_on) {
 				self->ui_active = true;
 				self->inform_ui = true;
 			}
-		}
-		else if (ev->body.type == self->uris.midi_MidiEvent && self->initialized && !self->reinit_in_progress) {
+		} else if (ev->body.type == self->uris.midi_MidiEvent &&
+				   self->initialized && !self->reinit_in_progress) {
 			if (ev->body.size != 3 || ev->time.frames > n_samples) { // XXX should be >= n_samples
 				continue;
 			}
@@ -535,7 +534,7 @@ work (LV2_Handle                  instance,
 {
 	AVLSynth* self = (AVLSynth*)instance;
 
-  if (size != sizeof (int)) {
+	if (size != sizeof (int)) {
 		return LV2_WORKER_ERR_UNKNOWN;
 	}
 	int magic = *((const int*)data);
