@@ -300,9 +300,13 @@ uninstall-bin:
 	rm -f $(DESTDIR)$(LV2DIR)/$(BUNDLE)/*.sf2
 	rm -f $(DESTDIR)$(LV2DIR)/$(BUNDLE)/$(LV2NAME)$(LIB_EXT)
 	rm -f $(DESTDIR)$(LV2DIR)/$(BUNDLE)/$(LV2GUI)$(LIB_EXT)
-	rm -f $(DESTDIR)$(BINDIR)/x42-avldrums$(EXE_EXT)
 	-rmdir $(DESTDIR)$(LV2DIR)/$(BUNDLE)
-	-rmdir $(DESTDIR)$(BINDIR)
+
+install-user: all
+	$(MAKE) LV2DIR=$(HOME)/.lv2 install
+
+uninstall-user:
+	$(MAKE) LV2DIR=$(HOME)/.lv2 uninstall
 
 install-man:
 
