@@ -459,6 +459,18 @@ run (LV2_Handle instance, uint32_t n_samples)
 			if (fluid_midi_event_get_type(self->fmidi_event) == 0xc0 /*PROGRAM_CHANGE*/) {
 				continue;
 			}
+			if (fluid_midi_event_get_type(self->fmidi_event) == 0xa0 /*KEY_PRESSURE*/) {
+				continue;
+			}
+			if (fluid_midi_event_get_type(self->fmidi_event) == 0xd0 /*CHANNEL_PRESSURE*/) {
+				continue;
+			}
+			if (fluid_midi_event_get_type(self->fmidi_event) == 0xe0 /*PITCH_BEND*/) {
+				continue;
+			}
+			if (fluid_midi_event_get_type(self->fmidi_event) == 0xf0 /*MIDI_SYSEX*/) {
+				continue;
+			}
 
 			if (fluid_midi_event_get_type(self->fmidi_event) == 0xb0 /*CC*/) {
 				switch (data[1]) {
