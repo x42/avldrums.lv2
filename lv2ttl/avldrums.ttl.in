@@ -12,8 +12,8 @@
   @SIGNATURE@
 
   lv2:requiredFeature urid:map, work:schedule ;
-  lv2:extensionData work:interface;
-  lv2:optionalFeature lv2:hardRTCapable;
+  lv2:extensionData work:interface, <http://ardour.org/lv2/midnam#interface>;
+  lv2:optionalFeature lv2:hardRTCapable, <http://ardour.org/lv2/midnam#update>;
 
   lv2:port [
       a lv2:InputPort, atom:AtomPort ;
