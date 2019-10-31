@@ -22,6 +22,9 @@
   foaf:mbox <mailto:robin@gareus.org>;
   foaf:homepage <http://gareus.org/> .
 
+<http://ardour.org/lv2/midnam#interface> a lv2:ExtensionData .
+<http://ardour.org/lv2/midnam#update> a lv2:Feature .
+
 @LV2NAME@:Cymbals
   a pg:OutputGroup, pg:DiscreteGroup;
 	lv2:symbol "Cymbals" ;
