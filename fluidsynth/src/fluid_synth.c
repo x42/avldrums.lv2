@@ -4412,8 +4412,10 @@ fluid_synth_kill_by_exclusive_class_LOCAL(fluid_synth_t *synth,
         if (new_voice->key == 51) { /* ride tip */
             return;
         }
-        /* Ride-shank (59) and ride-choke (52) kill
-         * all other ride sounds */
+        if (new_voice->key == 59) { /* ride shank */
+            return;
+        }
+        /* only ride-choke (52) kills all other ride sounds */
     }
 #endif
 
