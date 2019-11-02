@@ -4404,6 +4404,19 @@ fluid_synth_kill_by_exclusive_class_LOCAL(fluid_synth_t *synth,
         return;
     }
 
+#if 1 // AVLDrums special case
+    if(excl_class == 3 /* ride cymbal group */) {
+        if (new_voice->key == 53) { /* ride bell */
+            return;
+        }
+        if (new_voice->key == 51) { /* ride tip */
+            return;
+        }
+        /* Ride-shank (59) and ride-choke (52) kill
+         * all other ride sounds */
+    }
+#endif
+
     /* Kill all notes on the same channel with the same exclusive class */
     for(i = 0; i < synth->polyphony; i++)
     {
