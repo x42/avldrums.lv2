@@ -592,9 +592,11 @@ mn_file (LV2_Handle instance)
 #include "midnam.h"
 	AVLSynth* self = (AVLSynth*)instance;
 	char* mn = strdup (AVL_Drumkits_midnam);
-	char inst[13];
-	snprintf (inst, 12, "%p", self);
-	memcpy (&mn[0x142], inst, strlen(inst));
+	char inst[11];
+	snprintf (inst, 10, "%p", self);
+	inst[10] = '\0';
+	memcpy (&mn[339], inst, strlen(inst));
+	printf ("'%s'\n", mn);
 	return mn;
 }
 
@@ -602,11 +604,13 @@ static char*
 mn_model (LV2_Handle instance)
 {
 	AVLSynth* self = (AVLSynth*)instance;
-	char inst[13];
-	char* rv = malloc (17 * sizeof (char));
-	sprintf (rv, "AVL-Drumkits-LV2");
-	snprintf (inst, 12, "%p", self);
-	memcpy (rv, inst, strlen(inst));
+	char* rv = strdup ("AVL-Drumkits-LV2:0xXXXXXXXX");
+	sprintf (rv, "AVL-Drumkits-LV2:0xXXXXXXXX");
+	char inst[11];
+	snprintf (inst, 10, "%p", self);
+	inst[10] = '\0';
+	memcpy (&rv[17], inst, strlen(inst));
+	printf ("MIDNAM: '%s'\n", rv);
 	return rv;
 }
 
