@@ -596,7 +596,6 @@ mn_file (LV2_Handle instance)
 	snprintf (inst, 10, "%p", self);
 	inst[10] = '\0';
 	memcpy (&mn[339], inst, strlen(inst));
-	printf ("'%s'\n", mn);
 	return mn;
 }
 
@@ -610,7 +609,6 @@ mn_model (LV2_Handle instance)
 	snprintf (inst, 10, "%p", self);
 	inst[10] = '\0';
 	memcpy (&rv[17], inst, strlen(inst));
-	printf ("MIDNAM: '%s'\n", rv);
 	return rv;
 }
 
