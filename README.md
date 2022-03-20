@@ -12,7 +12,7 @@ Compiling avldrums requires the LV2 SDK, gnu-make, a c++-compiler,
 libglib, libpango, libcairo and openGL (sometimes called: glu, glx, mesa).
 
 ```bash
-  git clone git://github.com/x42/avldrums.lv2.git
+  git clone https://github.com/x42/avldrums.lv2.git
   cd avldrums.lv2
   make submodules
   make
