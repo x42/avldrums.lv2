@@ -230,6 +230,7 @@ ifneq ($(BUILDOPENGL), no)
 endif
 
 $(BUILDDIR)%.sf2:
+	@mkdir -p $(BUILDDIR)
 	cp -v sf2/$(*F).sf2 $@
 
 FLUID_SRC = \
