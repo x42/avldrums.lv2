@@ -41,7 +41,9 @@
 
 enum Kit {
 	BlackPearl = 1,
-	RedZeppelin
+	RedZeppelin,
+	BlondeBop,
+	BlondeBopHR,
 };
 
 static const char* drumnames [DRUM_PCS] = {
@@ -69,8 +71,8 @@ static const char* drumnames [DRUM_PCS] = {
 	"Crash Cymbal 2", // ZildjianK17Crash
 	"Crash Cymbal 2\nChoked",
 	"Ride Cymbal\nShank",
-	"Crash Cymbal 3", // Paiste2002
-	"Maracas"
+	"Crash Cymbal 3", // Paiste2002 / China
+	"Maracas/Shaker" // Maracas or Shaker
 };
 
 /* map_rec[ColorIndex] = drum
@@ -211,6 +213,35 @@ struct kGeometry pos_blackperl [DRUM_PCS] = {
 	{ 0.684046, 0.736184, 0.061522, 0.110532 }, // Maracas
 };
 
+struct kGeometry pos_blondebop [DRUM_PCS] = {
+	{ 0.465000, 0.577500, 0.090000, 0.140000 }, // Kick
+	{ 0.335000, 0.610000, 0.077500, 0.147500 }, // Snare Side
+	{ 0.335000, 0.610000, 0.077500, 0.147500 }, // Snare
+	{ 0.440000, 0.255000, 0.038750, 0.085000 }, // Hand Clap
+	{ 0.335000, 0.610000, 0.077500, 0.147500 }, // Snare Rim
+	{ 0.583750, 0.655000, 0.076250, 0.152500 }, // Floor Tom (center)
+	{ 0.201250, 0.695000, 0.092500, 0.165000 }, // Hi Hat (closed)
+	{ 0.583750, 0.655000, 0.076250, 0.152500 }, // Floor Tom (edge)
+	{ 0.332500, 0.947500, 0.030000, 0.067500 }, // Hi Hat (pedal)
+	{ 0.372500, 0.347500, 0.056250, 0.110000 }, // Tom (center)
+	{ 0.201250, 0.695000, 0.092500, 0.165000 }, // Hi Hat (semi open)
+	{ 0.372500, 0.347500, 0.056250, 0.110000 }, // Tom
+	{ 0.201250, 0.687500, 0.087500, 0.167500 }, // Hi Hat (swish)
+	{ 0.196250, 0.255000, 0.108750, 0.185000 }, // Paiste Crash (left)
+	{ 0.196250, 0.255000, 0.108750, 0.185000 }, // Paiste Crash
+	{ 0.563750, 0.297500, 0.101250, 0.182500 }, // Ride
+	{ 0.563750, 0.297500, 0.101250, 0.182500 }, // Ride (edge)
+	{ 0.563750, 0.297500, 0.101250, 0.182500 }, // Ride (bell)
+	{ 0.266250, 0.875000, 0.066250, 0.122500 }, // Tambourine (below HH)
+	{ 0.352500, 0.125000, 0.082500, 0.132500 }, // Splash
+	{ 0.461250, 0.442500, 0.037500, 0.047500 }, // Cowbell
+	{ 0.691250, 0.407500, 0.101250, 0.167500 }, // SabianAAXCrash
+	{ 0.691250, 0.407500, 0.101250, 0.167500 }, // SabianAAXCrash
+	{ 0.563750, 0.297500, 0.101250, 0.182500 }, // Ride (shank)
+	{ 0.771250, 0.667500, 0.130000, 0.220000 }, // China
+	{ 0.580000, 0.637500, 0.063750, 0.135000 }, // Shaker
+};
+
 typedef struct {
 	RobWidget *rw;
 
@@ -267,6 +298,9 @@ img_png_read (void* c, unsigned char* d, unsigned int s)
 {
 #include  "gui/red_zeppelin.png.h"
 #include  "gui/black_pearl.png.h"
+#include  "gui/blonde_bop.png.h"
+#include  "gui/blonde_bop_hr.png.h"
+
 	AvlDrumsLV2UI* ui = (AvlDrumsLV2UI*)c;
 	const unsigned char* img;
 	size_t len;
@@ -274,6 +308,14 @@ img_png_read (void* c, unsigned char* d, unsigned int s)
 		case RedZeppelin:
 			img = RedZeppelinPng;
 			len = sizeof (RedZeppelinPng);
+			break;
+		case BlondeBop:
+			img = BlondeBopPng;
+			len = sizeof (BlondeBopPng);
+			break;
+		case BlondeBopHR:
+			img = BlondeBopHRPng;
+			len = sizeof (BlondeBopHRPng);
 			break;
 		default:
 			img = BlackPearlPng;
@@ -293,6 +335,8 @@ map_png_read (void* c, unsigned char* d, unsigned int s)
 {
 #include  "gui/red_zeppelin.map.h"
 #include  "gui/black_pearl.map.h"
+#include  "gui/blonde_bop.map.h"
+
 	AvlDrumsLV2UI* ui = (AvlDrumsLV2UI*)c;
 	const unsigned char* img;
 	size_t len;
@@ -300,6 +344,11 @@ map_png_read (void* c, unsigned char* d, unsigned int s)
 		case RedZeppelin:
 			img = RedZeppelinMap;
 			len = sizeof (RedZeppelinMap);
+			break;
+		case BlondeBop:
+		case BlondeBopHR:
+			img = BlondeBopMap;
+			len = sizeof (BlondeBopMap);
 			break;
 		default:
 			img = BlackPearlMap;
@@ -961,6 +1010,10 @@ instantiate (
 	else if (!strcmp (plugin_uri, RTK_URI "BlackPearlMulti"))  { ui->kit = BlackPearl; }
 	else if (!strcmp (plugin_uri, RTK_URI "RedZeppelin"))      { ui->kit = RedZeppelin; }
 	else if (!strcmp (plugin_uri, RTK_URI "RedZeppelinMulti")) { ui->kit = RedZeppelin; }
+	else if (!strcmp (plugin_uri, RTK_URI "BlondeBop"))        { ui->kit = BlondeBop; }
+	else if (!strcmp (plugin_uri, RTK_URI "BlondeBopMulti"))   { ui->kit = BlondeBop; }
+	else if (!strcmp (plugin_uri, RTK_URI "BlondeBopHR"))      { ui->kit = BlondeBopHR; }
+	else if (!strcmp (plugin_uri, RTK_URI "BlondeBopHRMulti")) { ui->kit = BlondeBopHR; }
 
 	if (ui->kit == 0) {
 		free (ui);
@@ -996,6 +1049,10 @@ instantiate (
 	switch (ui->kit) {
 		case RedZeppelin:
 			ui->drumpos = pos_redzep;
+			break;
+		case BlondeBop:
+		case BlondeBopHR:
+			ui->drumpos = pos_blondebop;
 			break;
 		default:
 			ui->drumpos = pos_blackperl;

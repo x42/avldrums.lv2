@@ -104,6 +104,8 @@ targets+=$(BUILDDIR)$(LV2NAME)$(LIB_EXT)
 
 targets+=$(BUILDDIR)Red_Zeppelin_4_LV2.sf2
 targets+=$(BUILDDIR)Black_Pearl_4_LV2.sf2
+targets+=$(BUILDDIR)Blonde_Bop_LV2.sf2
+targets+=$(BUILDDIR)Blonde_Bop_HR_LV2.sf2
 
 UITTL=
 ifneq ($(BUILDOPENGL), no)
@@ -231,11 +233,27 @@ $(BUILDDIR)$(LV2NAME).ttl: Makefile lv2ttl/$(LV2NAME).*.in
 		lv2ttl/$(LV2NAME).ttl.in >> $(BUILDDIR)$(LV2NAME).ttl
 	cat \
 		lv2ttl/$(LV2NAME).stereo.ttl.in >> $(BUILDDIR)$(LV2NAME).ttl
+	sed "s/@LV2NAME@/$(LV2NAME)/g;s/@NAME@/Blonde Bop Drumkit/g;s/@VARIANT@/BlondeBop/g;s/@SIGNATURE@/$(LV2SIGN)/;s/@VERSION@/lv2:microVersion $(LV2MIC) ;lv2:minorVersion $(LV2MIN) ;/g;s/@UITTL@/$(UITTL)/" \
+		lv2ttl/$(LV2NAME).ttl.in >> $(BUILDDIR)$(LV2NAME).ttl
+	cat \
+		lv2ttl/$(LV2NAME).stereo.ttl.in >> $(BUILDDIR)$(LV2NAME).ttl
+	sed "s/@LV2NAME@/$(LV2NAME)/g;s/@NAME@/Blonde Bop Hot Rods Drumkit/g;s/@VARIANT@/BlondeBopHR/g;s/@SIGNATURE@/$(LV2SIGN)/;s/@VERSION@/lv2:microVersion $(LV2MIC) ;lv2:minorVersion $(LV2MIN) ;/g;s/@UITTL@/$(UITTL)/" \
+		lv2ttl/$(LV2NAME).ttl.in >> $(BUILDDIR)$(LV2NAME).ttl
+	cat \
+		lv2ttl/$(LV2NAME).stereo.ttl.in >> $(BUILDDIR)$(LV2NAME).ttl
 	sed "s/@LV2NAME@/$(LV2NAME)/g;s/@NAME@/Black Pearl Drumkit Multi/g;s/@VARIANT@/BlackPearlMulti/g;s/@SIGNATURE@/$(LV2SIGN)/;s/@VERSION@/lv2:microVersion $(LV2MIC) ;lv2:minorVersion $(LV2MIN) ;/g;s/@UITTL@/$(UITTL)/" \
 		lv2ttl/$(LV2NAME).ttl.in >> $(BUILDDIR)$(LV2NAME).ttl
 	sed "s/@LV2NAME@/$(LV2NAME)/g" \
 		lv2ttl/$(LV2NAME).multi.ttl.in >> $(BUILDDIR)$(LV2NAME).ttl
 	sed "s/@LV2NAME@/$(LV2NAME)/g;s/@NAME@/Red Zeppelin Drumkit Multi/g;s/@VARIANT@/RedZeppelinMulti/g;s/@SIGNATURE@/$(LV2SIGN)/;s/@VERSION@/lv2:microVersion $(LV2MIC) ;lv2:minorVersion $(LV2MIN) ;/g;s/@UITTL@/$(UITTL)/" \
+		lv2ttl/$(LV2NAME).ttl.in >> $(BUILDDIR)$(LV2NAME).ttl
+	sed "s/@LV2NAME@/$(LV2NAME)/g" \
+		lv2ttl/$(LV2NAME).multi.ttl.in >> $(BUILDDIR)$(LV2NAME).ttl
+	sed "s/@LV2NAME@/$(LV2NAME)/g;s/@NAME@/Blonde Bop Drumkit Multi/g;s/@VARIANT@/BlondeBopMulti/g;s/@SIGNATURE@/$(LV2SIGN)/;s/@VERSION@/lv2:microVersion $(LV2MIC) ;lv2:minorVersion $(LV2MIN) ;/g;s/@UITTL@/$(UITTL)/" \
+		lv2ttl/$(LV2NAME).ttl.in >> $(BUILDDIR)$(LV2NAME).ttl
+	sed "s/@LV2NAME@/$(LV2NAME)/g" \
+		lv2ttl/$(LV2NAME).multi.ttl.in >> $(BUILDDIR)$(LV2NAME).ttl
+	sed "s/@LV2NAME@/$(LV2NAME)/g;s/@NAME@/Blonde Bop Hot Rods Drumkit Multi/g;s/@VARIANT@/BlondeBopHRMulti/g;s/@SIGNATURE@/$(LV2SIGN)/;s/@VERSION@/lv2:microVersion $(LV2MIC) ;lv2:minorVersion $(LV2MIN) ;/g;s/@UITTL@/$(UITTL)/" \
 		lv2ttl/$(LV2NAME).ttl.in >> $(BUILDDIR)$(LV2NAME).ttl
 	sed "s/@LV2NAME@/$(LV2NAME)/g" \
 		lv2ttl/$(LV2NAME).multi.ttl.in >> $(BUILDDIR)$(LV2NAME).ttl

@@ -1,6 +1,6 @@
 /* avldrums -- simple & robust x-platform fluidsynth LV2
  *
- * Copyright (C) 2016 Robin Gareus <robin@gareus.org>
+ * Copyright (C) 2016-2023 Robin Gareus <robin@gareus.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -193,6 +193,7 @@ assign_channel (uint8_t note)
 		case 41:
 		case 43:
 			return 4; // Floor Tom
+		case 35: // Stick click (BB only)
 		case 39: // Hand Clap
 		case 54: // Tambourine
 		case 56: // Cowbell
@@ -247,7 +248,9 @@ instantiate (const LV2_Descriptor*     descriptor,
 {
 	static const char* kits [] = {
 		"Black_Pearl_4_LV2.sf2",
-		"Red_Zeppelin_4_LV2.sf2"
+		"Red_Zeppelin_4_LV2.sf2",
+		"Blonde_Bop_LV2.sf2",
+		"Blonde_Bop_HR_LV2.sf2"
 	};
 
 	int kit = -1;
@@ -261,6 +264,14 @@ instantiate (const LV2_Descriptor*     descriptor,
 		kit = 1;
 	} else if (!strcmp (descriptor->URI, AVL_URI "RedZeppelinMulti")) {
 		kit = 1; multi_out = true;
+	} else if (!strcmp (descriptor->URI, AVL_URI "BlondeBop")) {
+		kit = 2;
+	} else if (!strcmp (descriptor->URI, AVL_URI "BlondeBopMulti")) {
+		kit = 2; multi_out = true;
+	} else if (!strcmp (descriptor->URI, AVL_URI "BlondeBopHR")) {
+		kit = 3;
+	} else if (!strcmp (descriptor->URI, AVL_URI "BlondeBopHRMulti")) {
+		kit = 3; multi_out = true;
 	}
 
 	AVLSynth* self = (AVLSynth*)calloc (1, sizeof (AVLSynth));
@@ -648,6 +659,10 @@ mkdesc(0, "BlackPearl");
 mkdesc(1, "BlackPearlMulti");
 mkdesc(2, "RedZeppelin");
 mkdesc(3, "RedZeppelinMulti");
+mkdesc(4, "BlondeBop");
+mkdesc(5, "BlondeBopMulti");
+mkdesc(6, "BlondeBopHR");
+mkdesc(7, "BlondeBopHRMulti");
 
 #undef LV2_SYMBOL_EXPORT
 #ifdef _WIN32
@@ -664,6 +679,10 @@ lv2_descriptor (uint32_t index)
 	case 1: return &descriptor1;
 	case 2: return &descriptor2;
 	case 3: return &descriptor3;
+	case 4: return &descriptor4;
+	case 5: return &descriptor5;
+	case 6: return &descriptor6;
+	case 7: return &descriptor7;
 	default:
 		return NULL;
 	}
