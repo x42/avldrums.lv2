@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013-2016 Robin Gareus <robin@gareus.org>
+ * Copyright (C) 2013-2023 Robin Gareus <robin@gareus.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -71,6 +71,80 @@ static const char* drumnames [DRUM_PCS] = {
 	"Ride Cymbal\nShank",
 	"Crash Cymbal 3", // Paiste2002
 	"Maracas"
+};
+
+/* map_rec[ColorIndex] = drum
+ *
+ * When the map is scaled, the border of two
+ * map colors is interpolated / antialised.
+ *
+ * This map allows to use neighboring colors
+ * for different hits on the same drum.
+ *
+ * While also avoiding antialiasing on
+ * overlapping unrelated pieces.
+ */
+static const uint8_t map_red[DRUM_PCS] = {
+	0, // Kick
+	2, // Snare Center
+	4, // Snare Rim
+	1, // Snare Side
+	3, // Hand Clap
+
+	12, // Hi Hat (swish - outside)
+	10, // Hi Hat (semi open)
+	6, // Hi Hat (closed - inside)
+	7, // Floor Tom (edge)
+	5, // Floor Tom (center)
+
+	8, // Hi Hat (pedal)
+	11, // Tom edge
+	9, // Tom center
+	13, // Crash 1
+	14, // Crash 1 choked (overlaps with Tom 11,9 in redzep)
+
+	16, // Ride edge/choked  (out)
+	23, // Ride shank
+	15, // Ride tip
+	17, // Ride bell (inside)
+	18, // Tambourine
+
+	22, // Crash2 choked (out)
+	21, // Crash2 (in)
+	20, // Cowbell
+	24, // Crash3 / China
+	19, // Splash
+
+	25 // Maracas / Shaker
+};
+
+static const int drumgroup [DRUM_PCS][2] = {
+	{-1, -1}, // 0: Kick
+	{ 2,  4}, // 1: Snare Side
+	{ 1,  4}, // 2: Snare
+	{-1, -1}, // 3: Hand Clap
+	{ 2, -1}, // 4: Snare Rim
+	{ 7, 25}, // 5: Floor Tom (center)
+	{10, 12}, // 6: Hi Hat (closed)
+	{ 5, 25}, // 7: Floor Tom (edge)
+	{ 1, -1}, // 8: Hi Hat (pedal)
+	{11, -1}, // 9: Tom (center)
+	{ 6, 12}, // 10: Hi Hat (semi open)
+	{ 9, -1}, // 11: Tom (edge)
+	{ 6, 10}, // 12: Hi Hat (swish)
+	{14, -1}, // 13: SabianCrash (left)
+	{13, -1}, // 14: SabianCrash (choked)
+	{23, 17}, // 15: Ride (tip)
+	{15, 23}, // 16: Ride (edge/choked)
+	{15, 23}, // 17: Ride (bell)
+	{-1, -1}, // 18: Tambourine (below HH)
+	{-1, -1}, // 19: Splash
+	{-2,  1}, // 20: Cowbell
+	{22, -1}, // 21: SabianAAXCrash
+	{21, -1}, // 22: SabianAAXCrash
+	{15, 16}, // 23: Ride (shank)
+	{-1, -1}, // 24: Paiste2002 / China
+	{-2, -1}, // 25: Maracas / Shaker // 5, 7
 };
 
 struct kGeometry {
@@ -365,19 +439,20 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
 		cairo_surface_flush (ui->map_scaled);
 
 		for (int i = 0; i < DRUM_PCS; ++i) {
-			struct kGeometry* g = &ui->drumpos[i];
+			int d = map_red[i];
+			struct kGeometry* g = &ui->drumpos[d];
 			int ww = SW (2 * g->dx);
 			int hh = SH (2 * g->dy);
 			int xoff = SW (g->cx - g->dx);
 			int yoff = SH (g->cy - g->dy);
 
-			if (ui->anim_alpha[i]) { cairo_surface_destroy (ui->anim_alpha[i]); }
-			ui->anim_alpha[i] = cairo_image_surface_create (CAIRO_FORMAT_A8, ww, hh);
+			if (ui->anim_alpha[d]) { cairo_surface_destroy (ui->anim_alpha[d]); }
+			ui->anim_alpha[d] = cairo_image_surface_create (CAIRO_FORMAT_A8, ww, hh);
 
 			int src_stride = cairo_image_surface_get_stride (ui->map_scaled);
-			int dst_stride = cairo_image_surface_get_stride (ui->anim_alpha[i]);
+			int dst_stride = cairo_image_surface_get_stride (ui->anim_alpha[d]);
 			unsigned char* src = cairo_image_surface_get_data (ui->map_scaled);
-			unsigned char* dst = cairo_image_surface_get_data (ui->anim_alpha[i]);
+			unsigned char* dst = cairo_image_surface_get_data (ui->anim_alpha[d]);
 
 			for (int yy = 0; yy < hh; ++yy) {
 				if (yy + yoff < 0 || yy + yoff >= ui->height) { continue; }
@@ -388,15 +463,58 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
 					uint32_t sp = sy + (xx + xoff) * 4;
 					uint32_t dp = dy + xx;
 
-					if (i * 9 == ((src[sp+2] & 0xff) - 10)) {
-						dst[dp    ] = 0xff;
+					int clr = ((src[sp+2] & 0xff) - 10) / 9;
+					if (i == clr) {
+						dst[dp] = 0xff;
 					}
-
 				}
 			}
 
-			cairo_surface_mark_dirty(ui->anim_alpha[i]);
-			blur_image_surface(ui->anim_alpha[i], ww);
+			cairo_surface_mark_dirty(ui->anim_alpha[d]);
+			blur_image_surface(ui->anim_alpha[d], ww);
+
+#if 1 // remove blur outside of active areas
+			if (drumgroup[d][0] == -2) {
+				/* allow bleed */
+				continue;
+			}
+
+			cairo_surface_mark_dirty(ui->anim_alpha[d]);
+			for (int yy = 0; yy < hh; ++yy) {
+				if (yy + yoff < 0 || yy + yoff >= ui->height) { continue; }
+				uint32_t sy = (yy + yoff) * src_stride;
+				uint32_t dy = yy * dst_stride;
+				for (int xx = 0; xx < ww; ++xx) {
+					if (xx + xoff < 0 || xx + xoff >= ui->width) { continue; }
+					uint32_t sp = sy + (xx + xoff) * 4;
+					uint32_t dp = dy + xx;
+
+					if ((src[sp+2] & 0xff) == 0) {
+						dst[dp] = 0x00;
+						continue;
+					}
+
+					int clr = ((src[sp+2] & 0xff) - 10) / 9;
+					if (clr < 0 || clr >= DRUM_PCS) {
+						dst[dp] = 0x00;
+						continue;
+					}
+
+					/* allow overlap with same same piece */
+					clr = map_red[clr];
+					if (d == clr) {
+						continue;
+					}
+					if (drumgroup[d][0] >= 0 && drumgroup[d][0] == clr) {
+						continue;
+					}
+					if (drumgroup[d][1] >= 0 && drumgroup[d][1] == clr) {
+						continue;
+					}
+					dst[dp] = 0x00;
+				}
+			}
+#endif
 		}
 
 		ui->size_changed = false;
@@ -604,10 +722,10 @@ find_note (AvlDrumsLV2UI* ui, RobTkBtnEvent* ev)
 	// color index (28 colors)
 	// for (i = 10; i < 256; i += 9) { R, G, B =  i, ((21 * i) % 256), (17 * i) % 256 }
 	int c = ((img[p+2] & 0xff) - 10) / 9;
-	if (c >= DRUM_PCS) {
+	if (c >= DRUM_PCS || c < 0) {
 		return -1;
 	}
-	return c;
+	return map_red[c];
 }
 
 static RobWidget*
