@@ -418,7 +418,8 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
 	cairo_fill (cr);
 
 	if (ui->size_changed) {
-		float scale = ui->width / (float) cairo_image_surface_get_width (ui->bg);
+		float scale_i = ui->width / (float) cairo_image_surface_get_width (ui->bg);
+		float scale_m = ui->width / (float) cairo_image_surface_get_width (ui->map);
 		if (ui->bg_scaled) { cairo_surface_destroy (ui->bg_scaled); }
 		if (ui->map_scaled) { cairo_surface_destroy (ui->map_scaled); }
 
@@ -426,13 +427,13 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
 		ui->map_scaled = cairo_image_surface_create (CAIRO_FORMAT_RGB24, ui->width, ui->height);
 
 		cairo_t* icr = cairo_create (ui->bg_scaled);
-		cairo_scale (icr, scale, scale);
+		cairo_scale (icr, scale_i, scale_i);
 		cairo_set_source_surface (icr, ui->bg, 0, 0);
 		cairo_paint (icr);
 		cairo_destroy (icr);
 
 		icr = cairo_create (ui->map_scaled);
-		cairo_scale (icr, scale, scale);
+		cairo_scale (icr, scale_m, scale_m);
 		cairo_set_source_surface (icr, ui->map, 0, 0);
 		cairo_paint (icr);
 		cairo_destroy (icr);
@@ -521,11 +522,11 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
 
 		/* scale fonts */
 		char ft[32];
-		sprintf(ft, "Sans Bold %dpx", (int) rint(20. * scale));
+		sprintf(ft, "Sans Bold %dpx", (int) rint(20. * scale_m));
 		pango_font_description_free(ui->font[0]);
 		ui->font[0] = pango_font_description_from_string(ft);
 
-		sprintf(ft, "Sans %dpx", (int) rint(20. * scale));
+		sprintf(ft, "Sans %dpx", (int) rint(20. * scale_m));
 		pango_font_description_free(ui->font[1]);
 		ui->font[1] = pango_font_description_from_string(ft);
 	}
