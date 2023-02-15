@@ -42,11 +42,6 @@
 #define PATH_SEP "/"
 #endif
 
-enum {
-  CMD_APPLY    = 0,
-  CMD_FREE     = 1,
-};
-
 typedef struct {
 	/* ports */
 	const LV2_Atom_Sequence* control;
@@ -76,6 +71,7 @@ typedef struct {
 	bool multi_out;
 	bool inform_ui;
 	bool ui_active;
+	int  kit_id;
 
 	char current_sf2_file_path[1024];
 	char queue_sf2_file_path[1024];
@@ -279,6 +275,8 @@ instantiate (const LV2_Descriptor*     descriptor,
 	if (!self || !bundle_path || kit < 0) {
 		return NULL;
 	}
+
+	self->kit_id = kit;
 
 	LV2_URID_Map* map = NULL;
 
@@ -600,13 +598,64 @@ work_response (LV2_Handle  instance,
 static char*
 mn_file (LV2_Handle instance)
 {
-#include "midnam.h"
 	AVLSynth* self = (AVLSynth*)instance;
-	char* mn = strdup (AVL_Drumkits_midnam);
-	char inst[11];
-	snprintf (inst, 10, "%p", self);
-	inst[10] = '\0';
-	memcpy (&mn[339], inst, strlen(inst));
+	char* mn = (char*) calloc (4096, sizeof (char));
+	snprintf (mn, 4095,
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+"<!DOCTYPE MIDINameDocument PUBLIC \"-//MIDI Manufacturers Association//DTD MIDINameDocument 1.0//EN\" \"http://www.midi.org/dtds/MIDINameDocument10.dtd\">\n"
+"<MIDINameDocument>\n"
+"  <Author>Glen MacArthur</Author>\n"
+"  <MasterDeviceNames>\n"
+"    <Manufacturer>AVL-Drumkits</Manufacturer>\n"
+"    <Model>AVL-Drumkits-LV2:%p</Model>\n"
+"    <CustomDeviceMode Name=\"Drumkit Keymap\">\n"
+"      <ChannelNameSetAssignments>\n"
+"        <ChannelNameSetAssign Channel=\"1\" NameSet=\"Names\"/>\n"
+"        <ChannelNameSetAssign Channel=\"10\" NameSet=\"Names\"/>\n"
+"      </ChannelNameSetAssignments>\n"
+"    </CustomDeviceMode>\n"
+"    <ChannelNameSet Name=\"Names\">\n"
+"      <AvailableForChannels>\n"
+"        <AvailableChannel Channel=\"1\" Available=\"true\"/>\n"
+"        <AvailableChannel Channel=\"10\" Available=\"true\"/>\n"
+"      </AvailableForChannels>\n"
+"      <UsesNoteNameList Name=\"Notes\"/>\n"
+"    </ChannelNameSet>\n"
+"    <NoteNameList Name=\"Notes\">\n"
+"%s"
+"      <Note Number=\"36\" Name=\"KickDrum\"/>\n"
+"      <Note Number=\"37\" Name=\"SnareSidestk\"/>\n"
+"      <Note Number=\"38\" Name=\"SnareCtr\"/>\n"
+"      <Note Number=\"39\" Name=\"HandClap\"/>\n"
+"      <Note Number=\"40\" Name=\"SnareEdge\"/>\n"
+"      <Note Number=\"41\" Name=\"FloorTomCtr\"/>\n"
+"      <Note Number=\"42\" Name=\"ClosedHat\"/>\n"
+"      <Note Number=\"43\" Name=\"FloorTomEdge/Alt\"/>\n"
+"      <Note Number=\"44\" Name=\"PedalHat\"/>\n"
+"      <Note Number=\"45\" Name=\"TomCtr\"/>\n"
+"      <Note Number=\"46\" Name=\"SemiHat\"/>\n"
+"      <Note Number=\"47\" Name=\"TomEdge/Alt\"/>\n"
+"      <Note Number=\"48\" Name=\"SwishHat\"/>\n"
+"      <Note Number=\"49\" Name=\"Crash1\"/>\n"
+"      <Note Number=\"50\" Name=\"Crash1Chk\"/>\n"
+"      <Note Number=\"51\" Name=\"RideTip\"/>\n"
+"      <Note Number=\"52\" Name=\"RideChk\"/>\n"
+"      <Note Number=\"53\" Name=\"RideBell\"/>\n"
+"      <Note Number=\"54\" Name=\"Tambourine\"/>\n"
+"      <Note Number=\"55\" Name=\"Splash\"/>\n"
+"      <Note Number=\"56\" Name=\"Cowbell\"/>\n"
+"      <Note Number=\"57\" Name=\"Crash2\"/>\n"
+"      <Note Number=\"58\" Name=\"Crash2Chk\"/>\n"
+"      <Note Number=\"59\" Name=\"RideShank\"/>\n"
+"      <Note Number=\"60\" Name=\"Crash3\"/>\n"
+"      <Note Number=\"61\" Name=\"%s\"/>\n"
+"    </NoteNameList>\n"
+"   </MasterDeviceNames>\n"
+"</MIDINameDocument>\n"
+	, self
+	, self->kit_id > 2 ? "      <Note Number=\"35\" Name=\"Stick Click\"/>\n" : ""
+	, self->kit_id > 2 ? "Shaker" : "Maracas"
+);
 	return mn;
 }
 
@@ -614,12 +663,8 @@ static char*
 mn_model (LV2_Handle instance)
 {
 	AVLSynth* self = (AVLSynth*)instance;
-	char* rv = strdup ("AVL-Drumkits-LV2:0xXXXXXXXX");
-	sprintf (rv, "AVL-Drumkits-LV2:0xXXXXXXXX");
-	char inst[11];
-	snprintf (inst, 10, "%p", self);
-	inst[10] = '\0';
-	memcpy (&rv[17], inst, strlen(inst));
+	char* rv = (char*) calloc (64, sizeof (char));
+	snprintf (rv, 63, "AVL-Drumkits-LV2:%p", self);
 	return rv;
 }
 
