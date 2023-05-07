@@ -27,9 +27,15 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#ifdef HAVE_LV2_1_18_6
+#include <lv2/atom/util.h>
+#include <lv2/log/logger.h>
+#include <lv2/worker/worker.h>
+#else
 #include <lv2/lv2plug.in/ns/ext/atom/util.h>
 #include <lv2/lv2plug.in/ns/ext/log/logger.h>
 #include <lv2/lv2plug.in/ns/ext/worker/worker.h>
+#endif
 
 #include "midnam_lv2.h"
 

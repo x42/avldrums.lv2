@@ -19,11 +19,19 @@
 #ifndef AVLdrums_URIS_H
 #define AVLdrums_URIS_H
 
+#ifdef HAVE_LV2_1_18_6
+#include <lv2/atom/atom.h>
+#include <lv2/atom/forge.h>
+#include <lv2/core/lv2.h>
+#include <lv2/midi/midi.h>
+#include <lv2/urid/urid.h>
+#else
 #include <lv2/lv2plug.in/ns/lv2core/lv2.h>
 #include <lv2/lv2plug.in/ns/ext/atom/atom.h>
 #include <lv2/lv2plug.in/ns/ext/atom/forge.h>
 #include <lv2/lv2plug.in/ns/ext/urid/urid.h>
 #include <lv2/lv2plug.in/ns/ext/midi/midi.h>
+#endif
 
 #define AVL_URI "http://gareus.org/oss/lv2/avldrums#"
 
