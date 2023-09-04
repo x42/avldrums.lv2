@@ -135,6 +135,10 @@ load_sf2 (AVLSynth* self, const char* fn)
 		}
 	}
 
+	for (uint8_t chn = 0; chn < 6; ++chn) {
+		fluid_synth_set_channel_type (self->synth, chn, CHANNEL_TYPE_DRUM);
+	}
+
 	return true;
 }
 
@@ -353,7 +357,7 @@ instantiate (const LV2_Descriptor*     descriptor,
 	}
 
 	fluid_synth_set_gain (self->synth, 1.0f);
-	fluid_synth_set_polyphony (self->synth, DRUM_PCS);
+	fluid_synth_set_polyphony (self->synth, DRUM_PCS * 16);
 	fluid_synth_set_sample_rate (self->synth, (float)rate);
 
 	self->fmidi_event = new_fluid_midi_event ();
@@ -491,6 +495,10 @@ run (LV2_Handle instance, uint32_t n_samples)
 				switch (data[1]) {
 					case 0x0a: // pan
 					case 0x2a: // pan
+					case 0x40: // sustain
+					case 0x42: // sostenuto
+					case 0x44: // legato
+						/* ignore */
 						continue;
 					default:
 						break;
