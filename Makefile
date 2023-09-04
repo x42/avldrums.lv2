@@ -266,7 +266,7 @@ ifneq ($(BUILDOPENGL), no)
 	    lv2ttl/$(LV2NAME).gui.in >> $(BUILDDIR)$(LV2NAME).ttl
 endif
 
-$(BUILDDIR)%.sf2:
+$(BUILDDIR)%.sf2: sf2/%.sf2
 	@mkdir -p $(BUILDDIR)
 	cp -v sf2/$(*F).sf2 $@
 
