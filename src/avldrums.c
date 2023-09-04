@@ -335,6 +335,9 @@ instantiate (const LV2_Descriptor*     descriptor,
 		return NULL;
 	}
 
+#if defined(DEBUG) && !defined(NDEBUG)
+	fluid_settings_setint (self->settings, "synth.verbose", 1);
+#endif
 	fluid_settings_setnum (self->settings, "synth.sample-rate", rate);
 	fluid_settings_setint (self->settings, "synth.threadsafe-api", 0);
 
