@@ -256,7 +256,8 @@ instantiate (const LV2_Descriptor*     descriptor,
 		"Black_Pearl_4_LV2.sf2",
 		"Red_Zeppelin_4_LV2.sf2",
 		"Blonde_Bop_LV2.sf2",
-		"Blonde_Bop_HR_LV2.sf2"
+		"Blonde_Bop_HR_LV2.sf2",
+		"Buskmans_Holiday_LV2.sf2"
 	};
 
 	int kit = -1;
@@ -278,6 +279,8 @@ instantiate (const LV2_Descriptor*     descriptor,
 		kit = 3;
 	} else if (!strcmp (descriptor->URI, AVL_URI "BlondeBopHRMulti")) {
 		kit = 3; multi_out = true;
+	} else if (!strcmp (descriptor->URI, AVL_URI "BuskmansHoliday")) {
+		kit = 4;
 	}
 
 	AVLSynth* self = (AVLSynth*)calloc (1, sizeof (AVLSynth));
@@ -614,9 +617,8 @@ work_response (LV2_Handle  instance,
 }
 
 static char*
-mn_file (LV2_Handle instance)
+mn_drums (AVLSynth* self)
 {
-	AVLSynth* self = (AVLSynth*)instance;
 	char* mn = (char*) calloc (4096, sizeof (char));
 	snprintf (mn, 4095,
 "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
@@ -678,6 +680,72 @@ mn_file (LV2_Handle instance)
 }
 
 static char*
+mn_buskman (AVLSynth* self)
+{
+	char* mn = (char*) calloc (4096, sizeof (char));
+	snprintf (mn, 4095,
+"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+"<!DOCTYPE MIDINameDocument PUBLIC \"-//MIDI Manufacturers Association//DTD MIDINameDocument 1.0//EN\" \"http://www.midi.org/dtds/MIDINameDocument10.dtd\">\n"
+"<MIDINameDocument>\n"
+"  <Author>Glen MacArthur</Author>\n"
+"  <MasterDeviceNames>\n"
+"    <Manufacturer>AVL-Drumkits</Manufacturer>\n"
+"    <Model>AVL-Drumkits-LV2:%p</Model>\n"
+"    <CustomDeviceMode Name=\"Drumkit Keymap\">\n"
+"      <ChannelNameSetAssignments>\n"
+"        <ChannelNameSetAssign Channel=\"1\" NameSet=\"Names\"/>\n"
+"        <ChannelNameSetAssign Channel=\"10\" NameSet=\"Names\"/>\n"
+"      </ChannelNameSetAssignments>\n"
+"    </CustomDeviceMode>\n"
+"    <ChannelNameSet Name=\"Names\">\n"
+"      <AvailableForChannels>\n"
+"        <AvailableChannel Channel=\"1\" Available=\"true\"/>\n"
+"        <AvailableChannel Channel=\"10\" Available=\"true\"/>\n"
+"      </AvailableForChannels>\n"
+"      <UsesNoteNameList Name=\"Notes\"/>\n"
+"    </ChannelNameSet>\n"
+"    <NoteNameList Name=\"Notes\">\n"
+"      <Note Number=\"35\" Name=\"StickClick\"/>\n"
+"      <Note Number=\"36\" Name=\"CajonThump\"/>\n"
+"      <Note Number=\"37\" Name=\"FingerSnaps\"/>\n"
+"      <Note Number=\"38\" Name=\"CajonSlap-L\"/>\n"
+"      <Note Number=\"39\" Name=\"HandClap\"/>\n"
+"      <Note Number=\"40\" Name=\"CajonSlap-R\"/>\n"
+"      <Note Number=\"41\" Name=\"LargeConga-L\"/>\n"
+"      <Note Number=\"42\" Name=\"Shakers\"/>\n"
+"      <Note Number=\"43\" Name=\"LargeConga-R\"/>\n"
+"      <Note Number=\"44\" Name=\"ShakeTamb\"/>\n"
+"      <Note Number=\"45\" Name=\"SmallConga-L\"/>\n"
+"      <Note Number=\"46\" Name=\"BumpTamb\"/>\n"
+"      <Note Number=\"47\" Name=\"SmallConga-R\"/>\n"
+"      <Note Number=\"48\" Name=\"Claves\"/>\n"
+"      <Note Number=\"49\" Name=\"Cymbal\"/>\n"
+"      <Note Number=\"50\" Name=\"CymbalBell\"/>\n"
+"      <Note Number=\"51\" Name=\"Cowbell\"/>\n"
+"      <Note Number=\"52\" Name=\"FootStomp\"/>\n"
+"      <Note Number=\"53\" Name=\"Bucket\"/>\n"
+"      <Note Number=\"54\" Name=\"BellTreeDown\"/>\n"
+"      <Note Number=\"55\" Name=\"BellTreeUp\"/>\n"
+"    </NoteNameList>\n"
+"   </MasterDeviceNames>\n"
+"</MIDINameDocument>\n"
+	, self
+);
+	return mn;
+}
+
+static char*
+mn_file (LV2_Handle instance)
+{
+	AVLSynth* self = (AVLSynth*)instance;
+	if (self->kit_id == 4) {
+		return mn_buskman (self);
+	} else {
+		return mn_drums (self);
+	}
+}
+
+static char*
 mn_model (LV2_Handle instance)
 {
 	AVLSynth* self = (AVLSynth*)instance;
@@ -726,6 +794,7 @@ mkdesc(4, "BlondeBop");
 mkdesc(5, "BlondeBopMulti");
 mkdesc(6, "BlondeBopHR");
 mkdesc(7, "BlondeBopHRMulti");
+mkdesc(8, "BuskmansHoliday");
 
 #undef LV2_SYMBOL_EXPORT
 #ifdef _WIN32
@@ -746,6 +815,7 @@ lv2_descriptor (uint32_t index)
 	case 5: return &descriptor5;
 	case 6: return &descriptor6;
 	case 7: return &descriptor7;
+	case 8: return &descriptor8;
 	default:
 		return NULL;
 	}

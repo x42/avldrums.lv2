@@ -106,6 +106,7 @@ targets+=$(BUILDDIR)Red_Zeppelin_4_LV2.sf2
 targets+=$(BUILDDIR)Black_Pearl_4_LV2.sf2
 targets+=$(BUILDDIR)Blonde_Bop_LV2.sf2
 targets+=$(BUILDDIR)Blonde_Bop_HR_LV2.sf2
+targets+=$(BUILDDIR)Buskmans_Holiday_LV2.sf2
 
 UITTL=
 ifneq ($(BUILDOPENGL), no)
@@ -261,6 +262,10 @@ $(BUILDDIR)$(LV2NAME).ttl: Makefile lv2ttl/$(LV2NAME).*.in
 		lv2ttl/$(LV2NAME).ttl.in >> $(BUILDDIR)$(LV2NAME).ttl
 	sed "s/@LV2NAME@/$(LV2NAME)/g" \
 		lv2ttl/$(LV2NAME).multi.ttl.in >> $(BUILDDIR)$(LV2NAME).ttl
+	sed "s/@LV2NAME@/$(LV2NAME)/g;s/@NAME@/Buskman's Holiday Percussion/g;s/@VARIANT@/BuskmansHoliday/g;s/@SIGNATURE@/$(LV2SIGN)/;s/@VERSION@/lv2:microVersion $(LV2MIC) ;lv2:minorVersion $(LV2MIN) ;/g;s/@UITTL@//" \
+		lv2ttl/$(LV2NAME).ttl.in >> $(BUILDDIR)$(LV2NAME).ttl
+	cat \
+		lv2ttl/$(LV2NAME).stereo.ttl.in >> $(BUILDDIR)$(LV2NAME).ttl
 ifneq ($(BUILDOPENGL), no)
 	sed "s/@LV2NAME@/$(LV2NAME)/g;s/@UI_TYPE@/$(UI_TYPE)/;s/@UI_REQ@/$(LV2UIREQ)/" \
 	    lv2ttl/$(LV2NAME).gui.in >> $(BUILDDIR)$(LV2NAME).ttl
