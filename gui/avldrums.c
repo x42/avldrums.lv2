@@ -44,6 +44,7 @@ enum Kit {
 	RedZeppelin,
 	BlondeBop,
 	BlondeBopHR,
+	Buskman,
 };
 
 static const char* drumnames [DRUM_PCS] = {
@@ -751,6 +752,23 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
 #undef SW
 #undef SH
 
+/******************************************************************************/
+
+static bool
+expose_event_buskman (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
+{
+	AvlDrumsLV2UI* ui = (AvlDrumsLV2UI*)GET_HANDLE (handle);
+	cairo_rectangle (cr, ev->x, ev->y, ev->width, ev->height);
+	cairo_clip_preserve (cr);
+	CairoSetSouerceRGBA(c_trs);
+	cairo_fill (cr);
+
+	write_text_full (cr, "Buskman is on Holiday", ui->font[0], floor(ui->width * .5), floor(ui->height * 0.5), 0, 2, c_wht);
+	write_text_full (cr, "Buskman's Holiday Percussion set is available to you.", ui->font[1], floor(ui->width * .5), floor(ui->height * 0.95), 0, 5, c_wht);
+
+	return TRUE;
+}
+
 /******************************************************************************
  * UI event handling
  */
@@ -977,12 +995,18 @@ static void
 ui_enable (LV2UI_Handle handle)
 {
 	AvlDrumsLV2UI* ui = (AvlDrumsLV2UI*)handle;
+	if (ui->kit == Buskman) {
+		return;
+	}
 	msg_to_dsp (ui, ui->uris.ui_on);
 }
 
 static void
 ui_disable (LV2UI_Handle handle) {
 	AvlDrumsLV2UI* ui = (AvlDrumsLV2UI*)handle;
+	if (ui->kit == Buskman) {
+		return;
+	}
 	msg_to_dsp (ui, ui->uris.ui_off);
 }
 
@@ -1014,6 +1038,7 @@ instantiate (
 	else if (!strcmp (plugin_uri, RTK_URI "BlondeBopMulti"))   { ui->kit = BlondeBop; }
 	else if (!strcmp (plugin_uri, RTK_URI "BlondeBopHR"))      { ui->kit = BlondeBopHR; }
 	else if (!strcmp (plugin_uri, RTK_URI "BlondeBopHRMulti")) { ui->kit = BlondeBopHR; }
+	else if (!strcmp (plugin_uri, RTK_URI "BuskmansHoliday"))  { ui->kit = Buskman; }
 
 	if (ui->kit == 0) {
 		free (ui);
@@ -1068,22 +1093,33 @@ instantiate (
 	map_avldrums_uris (map, &ui->uris);
 
 	/* GUI layout */
-	ui->font[0] = pango_font_description_from_string("Sans Bold 16px");
-	ui->font[1] = pango_font_description_from_string("Sans 14px");
 
 	ui->rw = robwidget_new (ui);
 	robwidget_make_toplevel (ui->rw, ui_toplevel);
 	ROBWIDGET_SETNAME (ui->rw, "drums");
 
-	robwidget_set_expose_event (ui->rw, expose_event);
 	robwidget_set_size_request (ui->rw, size_request);
 	robwidget_set_size_allocate (ui->rw, size_allocate);
-	robwidget_set_size_limit (ui->rw, size_limit);
 	robwidget_set_size_default (ui->rw, size_request);
+
+	if (ui->kit == Buskman) {
+		*widget = ui->rw;
+		robwidget_set_expose_event (ui->rw, expose_event_buskman);
+		ui->font[0] = pango_font_description_from_string("Sans Bold 32px");
+		ui->font[1] = pango_font_description_from_string("Sans 14px");
+		return ui;
+	}
+
+	robwidget_set_expose_event (ui->rw, expose_event);
+	robwidget_set_size_limit (ui->rw, size_limit);
+
 	robwidget_set_mouseup (ui->rw, mouseup);
 	robwidget_set_mousedown (ui->rw, mousedown);
 	robwidget_set_mousemove (ui->rw, mousemove);
 	robwidget_set_mousescroll (ui->rw, mousescroll);
+
+	ui->font[0] = pango_font_description_from_string("Sans Bold 16px");
+	ui->font[1] = pango_font_description_from_string("Sans 14px");
 
 	ui->bg = cairo_image_surface_create_from_png_stream (img_png_read, ui);
 	ui->map = cairo_image_surface_create_from_png_stream (map_png_read, ui);
@@ -1103,6 +1139,14 @@ cleanup (LV2UI_Handle handle)
 {
 	AvlDrumsLV2UI* ui = (AvlDrumsLV2UI*)handle;
 	robwidget_destroy (ui->rw);
+	pango_font_description_free(ui->font[0]);
+	pango_font_description_free(ui->font[1]);
+
+	if (ui->kit == Buskman) {
+		free (ui);
+		return;
+	}
+
 	cairo_surface_destroy (ui->bg);
 	cairo_surface_destroy (ui->map);
 	if (ui->bg_scaled) { cairo_surface_destroy (ui->bg_scaled); }
@@ -1110,8 +1154,6 @@ cleanup (LV2UI_Handle handle)
 	for (int i = 0; i < DRUM_PCS; ++i) {
 		if (ui->anim_alpha[i]) { cairo_surface_destroy (ui->anim_alpha[i]); }
 	}
-	pango_font_description_free(ui->font[0]);
-	pango_font_description_free(ui->font[1]);
 	free (ui);
 }
 
@@ -1130,6 +1172,10 @@ port_event (
 		const void*  buffer)
 {
 	AvlDrumsLV2UI* ui = (AvlDrumsLV2UI*)handle;
+
+	if (ui->kit == Buskman) {
+		return;
+	}
 
 	if (format == ui->uris.atom_eventTransfer && port_index == AVL_PORT_NOTIFY) {
 		LV2_Atom* atom = (LV2_Atom*)buffer;

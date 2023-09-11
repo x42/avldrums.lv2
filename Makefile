@@ -262,7 +262,7 @@ $(BUILDDIR)$(LV2NAME).ttl: Makefile lv2ttl/$(LV2NAME).*.in
 		lv2ttl/$(LV2NAME).ttl.in >> $(BUILDDIR)$(LV2NAME).ttl
 	sed "s/@LV2NAME@/$(LV2NAME)/g" \
 		lv2ttl/$(LV2NAME).multi.ttl.in >> $(BUILDDIR)$(LV2NAME).ttl
-	sed "s/@LV2NAME@/$(LV2NAME)/g;s/@NAME@/Buskman's Holiday Percussion/g;s/@VARIANT@/BuskmansHoliday/g;s/@SIGNATURE@/$(LV2SIGN)/;s/@VERSION@/lv2:microVersion $(LV2MIC) ;lv2:minorVersion $(LV2MIN) ;/g;s/@UITTL@//" \
+	sed "s/@LV2NAME@/$(LV2NAME)/g;s/@NAME@/Buskman's Holiday Percussion/g;s/@VARIANT@/BuskmansHoliday/g;s/@SIGNATURE@/$(LV2SIGN)/;s/@VERSION@/lv2:microVersion $(LV2MIC) ;lv2:minorVersion $(LV2MIN) ;/g;s/@UITTL@/$(UITTL)/" \
 		lv2ttl/$(LV2NAME).ttl.in >> $(BUILDDIR)$(LV2NAME).ttl
 	cat \
 		lv2ttl/$(LV2NAME).stereo.ttl.in >> $(BUILDDIR)$(LV2NAME).ttl
