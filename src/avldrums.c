@@ -283,6 +283,7 @@ instantiate (const LV2_Descriptor*     descriptor,
 	AVLSynth* self = (AVLSynth*)calloc (1, sizeof (AVLSynth));
 
 	if (!self || !bundle_path || kit < 0) {
+		free (self);
 		return NULL;
 	}
 
