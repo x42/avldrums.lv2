@@ -308,7 +308,11 @@ FLUID_SRC = \
 CPPFLAGS += -Ifluidsynth -I fluidsynth/fluidsynth -DHAVE_CONFIG_H -D DEFAULT_SOUNDFONT=\"\"
 DSP_SRC  = src/$(LV2NAME).c $(FLUID_SRC)
 DSP_DEPS = $(DSP_SRC) src/$(LV2NAME).h
-GUI_DEPS = gui/$(LV2NAME).c src/$(LV2NAME).h
+GUI_DEPS = gui/$(LV2NAME).c src/$(LV2NAME).h gui/cairoblur.h \
+           gui/black_pearl.map.h gui/black_pearl.png.h \
+           gui/red_zeppelin.map.h gui/red_zeppelin.png.h \
+           gui/buskman.map.h gui/buskman.png.h \
+           gui/blonde_bop.map.h gui/blonde_bop_hr.png.h gui/blonde_bop.png.h
 
 $(BUILDDIR)$(LV2NAME)$(LIB_EXT): $(DSP_DEPS) Makefile
 	@mkdir -p $(BUILDDIR)
@@ -321,7 +325,7 @@ ifneq ($(BUILDOPENGL), no)
  -include $(RW)robtk.mk
 endif
 
-$(BUILDDIR)$(LV2GUI)$(LIB_EXT): gui/$(LV2NAME).c
+$(BUILDDIR)$(LV2GUI)$(LIB_EXT): $(GUI_DEPS)
 
 ###############################################################################
 # install/uninstall/clean target definitions
