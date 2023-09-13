@@ -76,6 +76,35 @@ static const char* drumnames [DRUM_PCS] = {
 	"Maracas/Shaker" // Maracas or Shaker
 };
 
+static const char* percnames [DRUM_PCS] = {
+	"Cajon Thump",
+	"Finger Snaps",
+	"Cajon Slap Left",
+	"Hand Clap",
+	"Cajon Slap Right",
+	"Large Conga Left",
+	"Shakers",
+	"Large Conga Right",
+	"Shake Tambourine",
+	"Small Conga Left",
+	"Bump Tambourine",
+	"Small Conga Right",
+	"Claves",
+	"Cymbal",
+	"Cymbal Bell",
+	"Cowbell",
+	"FootStomp",
+	"Bucket",
+	"Bell Tree Down",
+	"Bell Tree Up",
+	"",
+	"",
+	"",
+	"",
+	"",
+	"",
+};
+
 /* map_rec[ColorIndex] = drum
  *
  * When the map is scaled, the border of two
@@ -88,35 +117,35 @@ static const char* drumnames [DRUM_PCS] = {
  * overlapping unrelated pieces.
  */
 static const uint8_t map_red[DRUM_PCS] = {
-	0, // Kick
-	2, // Snare Center
-	4, // Snare Rim
-	1, // Snare Side
-	3, // Hand Clap
+	0, // Kick                      | CajonThump
+	2, // Snare Center              | CajonSlap L
+	4, // Snare Rim                 | CajonSlap-R
+	1, // Snare Side                | FingerSnaps
+	3, // Hand Clap                 | HandClap
 
-	12, // Hi Hat (swish - outside)
-	10, // Hi Hat (semi open)
-	6, // Hi Hat (closed - inside)
-	7, // Floor Tom (edge)
-	5, // Floor Tom (center)
+	12, // Hi Hat (swish - outside) | Claves
+	10, // Hi Hat (semi open)       | BumpTamb
+	6, // Hi Hat (closed - inside)  | Shakers
+	7, // Floor Tom (edge)          | LargeConga-R
+	5, // Floor Tom (center)        | LargeConga-L
 
-	8, // Hi Hat (pedal)
-	11, // Tom edge
-	9, // Tom center
-	13, // Crash 1
-	14, // Crash 1 choked (overlaps with Tom 11,9 in redzep)
+	8, // Hi Hat (pedal)            | ShakeTamb
+	11, // Tom edge                 | SmallConga-R
+	9, // Tom center                | SmallConga-L
+	13, // Crash 1                  | Cymbal
+	14, // Crash 1 choked (overlaps with Tom 11,9 in redzep)  | CymbalBell
 
-	16, // Ride edge/choked  (out)
+	16, // Ride edge/choked (out)   | FootStomp
 	23, // Ride shank
-	15, // Ride tip
-	17, // Ride bell (inside)
-	18, // Tambourine
+	15, // Ride tip                 | Cowbell
+	17, // Ride bell (inside)       | Bucket
+	18, // Tambourine               | BellTreeDown
 
 	22, // Crash2 choked (out)
 	21, // Crash2 (in)
 	20, // Cowbell
 	24, // Crash3 / China
-	19, // Splash
+	19, // Splash                   | BellTreeUp
 
 	25 // Maracas / Shaker
 };
@@ -243,6 +272,29 @@ struct kGeometry pos_blondebop [DRUM_PCS] = {
 	{ 0.580000, 0.637500, 0.063750, 0.135000 }, // Shaker
 };
 
+struct kGeometry pos_buskman [DRUM_PCS] = {
+	{ 0.500, 0.20, 0.14, 0.04 }, // CajonThump
+	{ 0.500, 0.30, 0.14, 0.04 }, // FingerSnaps
+	{ 0.215, 0.20, 0.14, 0.04 }, // CajonSlap-L
+	{ 0.500, 0.41, 0.14, 0.04 }, // HandClap
+	{ 0.785, 0.20, 0.14, 0.04 }, // CajonSlap-R
+	{ 0.215, 0.30, 0.14, 0.04 }, // LargeConga-L
+	{ 0.500, 0.52, 0.14, 0.04 }, // Shakers
+	{ 0.785, 0.30, 0.14, 0.04 }, // LargeConga-R
+	{ 0.500, 0.63, 0.14, 0.04 }, // ShakeTamb
+	{ 0.215, 0.41, 0.14, 0.04 }, // SmallConga-L
+	{ 0.500, 0.73, 0.14, 0.04 }, // BumpTamb
+	{ 0.785, 0.41, 0.14, 0.04 }, // SmallConga-R
+	{ 0.215, 0.52, 0.14, 0.04 }, // Claves
+	{ 0.215, 0.63, 0.14, 0.04 }, // Cymbal
+	{ 0.215, 0.73, 0.14, 0.04 }, // CymbalBell
+	{ 0.785, 0.52, 0.14, 0.04 }, // Cowbell
+	{ 0.785, 0.63, 0.14, 0.04 }, // FootStomp
+	{ 0.785, 0.73, 0.14, 0.04 }, // Bucket
+	{ 0.500, 0.84, 0.14, 0.04 }, // BellTreeDown
+	{ 0.785, 0.84, 0.14, 0.04 }, // BellTreeUp
+};
+
 typedef struct {
 	RobWidget *rw;
 
@@ -282,7 +334,9 @@ typedef struct {
 	bool show_menu;
 	uint8_t m_vel;
 
-	struct kGeometry* drumpos;
+	struct kGeometry*  drumpos;
+	char const* const* names;
+	bool               use_groups;
 
 #ifdef DEVELOP
 	double _xc, _yc;
@@ -301,6 +355,7 @@ img_png_read (void* c, unsigned char* d, unsigned int s)
 #include  "gui/black_pearl.png.h"
 #include  "gui/blonde_bop.png.h"
 #include  "gui/blonde_bop_hr.png.h"
+#include  "gui/buskman.png.h"
 
 	AvlDrumsLV2UI* ui = (AvlDrumsLV2UI*)c;
 	const unsigned char* img;
@@ -317,6 +372,10 @@ img_png_read (void* c, unsigned char* d, unsigned int s)
 		case BlondeBopHR:
 			img = BlondeBopHRPng;
 			len = sizeof (BlondeBopHRPng);
+			break;
+		case Buskman:
+			img = BuskmanPng;
+			len = sizeof (BuskmanPng);
 			break;
 		default:
 			img = BlackPearlPng;
@@ -337,6 +396,7 @@ map_png_read (void* c, unsigned char* d, unsigned int s)
 #include  "gui/red_zeppelin.map.h"
 #include  "gui/black_pearl.map.h"
 #include  "gui/blonde_bop.map.h"
+#include  "gui/buskman.map.h"
 
 	AvlDrumsLV2UI* ui = (AvlDrumsLV2UI*)c;
 	const unsigned char* img;
@@ -350,6 +410,10 @@ map_png_read (void* c, unsigned char* d, unsigned int s)
 		case BlondeBopHR:
 			img = BlondeBopMap;
 			len = sizeof (BlondeBopMap);
+			break;
+		case Buskman:
+			img = BuskmanMap;
+			len = sizeof (BuskmanMap);
 			break;
 		default:
 			img = BlackPearlMap;
@@ -525,7 +589,7 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
 			blur_image_surface(ui->anim_alpha[d], ww);
 
 #if 1 // remove blur outside of active areas
-			if (drumgroup[d][0] == -2) {
+			if (drumgroup[d][0] == -2 || !ui->use_groups) {
 				/* allow bleed */
 				continue;
 			}
@@ -649,7 +713,7 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
 			float anim = 1 - ui->kit_anim[i];
 			cx = SW (ui->drumpos[i].cx);
 			cy = SH (ui->drumpos[i].cy - anim * 0.1);
-			snprintf (txt, sizeof(txt), "%s\n(%d)", drumnames[i], ui->kit_velo[i]);
+			snprintf (txt, sizeof(txt), "%s\n(%d)", ui->names[i], ui->kit_velo[i]);
 			txt[sizeof(txt) - 1] = 0;
 
 			outline_text (cr, pl, ui->font[0], txt, cx, cy, 1 + .15 * anim, c_txt, c_out, &tw, &th);
@@ -705,17 +769,22 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
 		}
 	}
 	else if (ui->hover_note >= 0) {
-		char txt[192];
+		char txt[255];
 		const int i = ui->hover_note;
-		outline_text (cr, pl, ui->font[1], drumnames[i],
-				SW (ui->drumpos[i].cx), SH (ui->drumpos[i].cy), 1.0,
-				c_wht, c_blk, NULL, NULL);
+		if (ui->use_groups) {
+			/* not for Buskman */
+			outline_text (cr, pl, ui->font[1], ui->names[i],
+					SW (ui->drumpos[i].cx), SH (ui->drumpos[i].cy), 1.0,
+					c_wht, c_blk, NULL, NULL);
+		}
 
 		static const char notename[12][3] = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
 		int mn = (ui->hover_note + 36) % 12;
 		int mo = (ui->hover_note + 36) / 12 - 1;
 
-		snprintf (txt, sizeof(txt), "<markup> Audition Velocity: %3d <small><i>(change with mouse-wheel)</i></small>  -  MIDI-Note: %-2s%d (%d)</markup>", ui->m_vel, notename[mn], mo, 36 + ui->hover_note);
+		snprintf (txt, sizeof(txt), "<markup> Audition Velocity: %3d <small><i>(change with mouse-wheel)</i></small>  -  MIDI-Note: %-2s%d (%d) %s</markup>",
+				ui->m_vel, notename[mn], mo, 36 + ui->hover_note,
+				ui->use_groups ? "" : ui->names[i]);
 		write_text_full (cr, txt, ui->font[1], 0, ui->height, 0, -6, c_wht);
 	}
 	g_object_unref(pl);
@@ -751,23 +820,6 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
 
 #undef SW
 #undef SH
-
-/******************************************************************************/
-
-static bool
-expose_event_buskman (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
-{
-	AvlDrumsLV2UI* ui = (AvlDrumsLV2UI*)GET_HANDLE (handle);
-	cairo_rectangle (cr, ev->x, ev->y, ev->width, ev->height);
-	cairo_clip_preserve (cr);
-	CairoSetSouerceRGBA(c_trs);
-	cairo_fill (cr);
-
-	write_text_full (cr, "Buskman is on Holiday", ui->font[0], floor(ui->width * .5), floor(ui->height * 0.5), 0, 2, c_wht);
-	write_text_full (cr, "Buskman's Holiday Percussion set is available to you.", ui->font[1], floor(ui->width * .5), floor(ui->height * 0.95), 0, 5, c_wht);
-
-	return TRUE;
-}
 
 /******************************************************************************
  * UI event handling
@@ -846,11 +898,31 @@ mousedown (RobWidget* handle, RobTkBtnEvent *ev)
 		return NULL;
 	}
 
+	switch (ui->kit) {
+		case RedZeppelin:
+			ui->show_hotzones =((ev->x / (double) ui->width) > 0.73 && (ev->y / (double) ui->height) < .09);
+			break;
+		case BlackPearl:
+			ui->show_hotzones =((ev->x / (double) ui->width) > 0.77 && (ev->y / (double) ui->height) < .09);
+			break;
+		case BlondeBop:
+		case BlondeBopHR:
+			ui->show_hotzones =((ev->x / (double) ui->width) > 0.72 && (ev->y / (double) ui->height) < .11);
+			break;
+		case Buskman:
+			ui->show_hotzones =((ev->x / (double) ui->width) > 0.71 && (ev->y / (double) ui->height) < .09);
+			break;
+	}
+
 	/* top-right (kit-name) */
-	if ((ev->x / (double) ui->width) > (ui->kit == RedZeppelin ? 0.73 : .77) && (ev->y / (double) ui->height) < .09) {
-		ui->show_hotzones = true;
+	if (ui->show_hotzones) {
 		queue_draw (ui->rw);
 		return handle;
+	}
+
+
+	if ((ev->x / (double) ui->width) > (ui->kit == RedZeppelin ? 0.73 : .77) && (ev->y / (double) ui->height) < .09) { // XXX HR
+		ui->show_hotzones = true;
 	}
 
 	int n = find_note (ui, ev);
@@ -995,18 +1067,12 @@ static void
 ui_enable (LV2UI_Handle handle)
 {
 	AvlDrumsLV2UI* ui = (AvlDrumsLV2UI*)handle;
-	if (ui->kit == Buskman) {
-		return;
-	}
 	msg_to_dsp (ui, ui->uris.ui_on);
 }
 
 static void
 ui_disable (LV2UI_Handle handle) {
 	AvlDrumsLV2UI* ui = (AvlDrumsLV2UI*)handle;
-	if (ui->kit == Buskman) {
-		return;
-	}
 	msg_to_dsp (ui, ui->uris.ui_off);
 }
 
@@ -1070,6 +1136,8 @@ instantiate (
 	ui->show_highlight = true;
 	ui->show_menu      = false;
 	ui->m_vel          = 100;
+	ui->use_groups     = true;
+	ui->names          = drumnames;
 
 	switch (ui->kit) {
 		case RedZeppelin:
@@ -1078,6 +1146,11 @@ instantiate (
 		case BlondeBop:
 		case BlondeBopHR:
 			ui->drumpos = pos_blondebop;
+			break;
+		case Buskman:
+			ui->drumpos    = pos_buskman;
+			ui->names      = percnames;
+			ui->use_groups = false;
 			break;
 		default:
 			ui->drumpos = pos_blackperl;
@@ -1101,15 +1174,6 @@ instantiate (
 	robwidget_set_size_request (ui->rw, size_request);
 	robwidget_set_size_allocate (ui->rw, size_allocate);
 	robwidget_set_size_default (ui->rw, size_request);
-
-	if (ui->kit == Buskman) {
-		*widget = ui->rw;
-		robwidget_set_expose_event (ui->rw, expose_event_buskman);
-		ui->font[0] = pango_font_description_from_string("Sans Bold 32px");
-		ui->font[1] = pango_font_description_from_string("Sans 14px");
-		return ui;
-	}
-
 	robwidget_set_expose_event (ui->rw, expose_event);
 	robwidget_set_size_limit (ui->rw, size_limit);
 
@@ -1141,12 +1205,6 @@ cleanup (LV2UI_Handle handle)
 	robwidget_destroy (ui->rw);
 	pango_font_description_free(ui->font[0]);
 	pango_font_description_free(ui->font[1]);
-
-	if (ui->kit == Buskman) {
-		free (ui);
-		return;
-	}
-
 	cairo_surface_destroy (ui->bg);
 	cairo_surface_destroy (ui->map);
 	if (ui->bg_scaled) { cairo_surface_destroy (ui->bg_scaled); }
@@ -1172,10 +1230,6 @@ port_event (
 		const void*  buffer)
 {
 	AvlDrumsLV2UI* ui = (AvlDrumsLV2UI*)handle;
-
-	if (ui->kit == Buskman) {
-		return;
-	}
 
 	if (format == ui->uris.atom_eventTransfer && port_index == AVL_PORT_NOTIFY) {
 		LV2_Atom* atom = (LV2_Atom*)buffer;
