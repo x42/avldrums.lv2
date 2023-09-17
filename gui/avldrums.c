@@ -273,26 +273,26 @@ struct kGeometry pos_blondebop [DRUM_PCS] = {
 };
 
 struct kGeometry pos_buskman [DRUM_PCS] = {
-	{ 0.500, 0.20, 0.14, 0.04 }, // CajonThump
-	{ 0.500, 0.30, 0.14, 0.04 }, // FingerSnaps
-	{ 0.215, 0.20, 0.14, 0.04 }, // CajonSlap-L
-	{ 0.500, 0.41, 0.14, 0.04 }, // HandClap
-	{ 0.785, 0.20, 0.14, 0.04 }, // CajonSlap-R
-	{ 0.215, 0.30, 0.14, 0.04 }, // LargeConga-L
-	{ 0.500, 0.52, 0.14, 0.04 }, // Shakers
-	{ 0.785, 0.30, 0.14, 0.04 }, // LargeConga-R
-	{ 0.500, 0.63, 0.14, 0.04 }, // ShakeTamb
-	{ 0.215, 0.41, 0.14, 0.04 }, // SmallConga-L
-	{ 0.500, 0.73, 0.14, 0.04 }, // BumpTamb
-	{ 0.785, 0.41, 0.14, 0.04 }, // SmallConga-R
-	{ 0.215, 0.52, 0.14, 0.04 }, // Claves
-	{ 0.215, 0.63, 0.14, 0.04 }, // Cymbal
-	{ 0.215, 0.73, 0.14, 0.04 }, // CymbalBell
-	{ 0.785, 0.52, 0.14, 0.04 }, // Cowbell
-	{ 0.785, 0.63, 0.14, 0.04 }, // FootStomp
-	{ 0.785, 0.73, 0.14, 0.04 }, // Bucket
-	{ 0.500, 0.84, 0.14, 0.04 }, // BellTreeDown
-	{ 0.785, 0.84, 0.14, 0.04 }, // BellTreeUp
+	{ 0.575000, 0.505000, 0.053750, 0.082500 }, // CajonThump
+	{ 0.261250, 0.302500, 0.053750, 0.072500 }, // FingerSnaps //
+	{ 0.552500, 0.357500, 0.033750, 0.055000 }, // CajonSlap-L
+	{ 0.256250, 0.372500, 0.067500, 0.095000 }, // HandClap //
+	{ 0.603750, 0.355000, 0.030000, 0.062500 }, // CajonSlap-R
+	{ 0.786250, 0.615000, 0.047500, 0.170000 }, // LargeConga-L
+	{ 0.863750, 0.535000, 0.080000, 0.142500 }, // Shakers
+	{ 0.865000, 0.650000, 0.040000, 0.120000 }, // LargeConga-R
+	{ 0.437500, 0.712500, 0.068750, 0.140000 }, // ShakeTamb
+	{ 0.696250, 0.325000, 0.038750, 0.137500 }, // SmallConga-L
+	{ 0.437500, 0.712500, 0.065000, 0.122500 }, // BumpTamb
+	{ 0.763750, 0.345000, 0.033750, 0.105000 }, // SmallConga-R
+	{ 0.760000, 0.262500, 0.057500, 0.082500 }, // Claves
+	{ 0.191250, 0.752500, 0.130000, 0.235000 }, // Cymbal
+	{ 0.192500, 0.742500, 0.056250, 0.100000 }, // CymbalBell
+	{ 0.311250, 0.547500, 0.058750, 0.097500 }, // Cowbell
+	{ 0.377500, 0.237500, 0.036250, 0.177500 }, // FootStomp
+	{ 0.562500, 0.755000, 0.055000, 0.115000 }, // Bucket
+	{ 0.401250, 0.507500, 0.055000, 0.060000 }, // BellTreeDown
+	{ 0.467500, 0.442500, 0.046250, 0.067500 }, // BellTreeUp
 };
 
 typedef struct {
@@ -771,12 +771,9 @@ expose_event (RobWidget* handle, cairo_t* cr, cairo_rectangle_t* ev)
 	else if (ui->hover_note >= 0) {
 		char txt[255];
 		const int i = ui->hover_note;
-		if (ui->use_groups) {
-			/* not for Buskman */
-			outline_text (cr, pl, ui->font[1], ui->names[i],
-					SW (ui->drumpos[i].cx), SH (ui->drumpos[i].cy), 1.0,
-					c_wht, c_blk, NULL, NULL);
-		}
+		outline_text (cr, pl, ui->font[1], ui->names[i],
+				SW (ui->drumpos[i].cx), SH (ui->drumpos[i].cy), 1.0,
+				c_wht, c_blk, NULL, NULL);
 
 		static const char notename[12][3] = { "C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B" };
 		int mn = (ui->hover_note + 36) % 12;
@@ -910,7 +907,7 @@ mousedown (RobWidget* handle, RobTkBtnEvent *ev)
 			ui->show_hotzones =((ev->x / (double) ui->width) > 0.72 && (ev->y / (double) ui->height) < .11);
 			break;
 		case Buskman:
-			ui->show_hotzones =((ev->x / (double) ui->width) > 0.71 && (ev->y / (double) ui->height) < .09);
+			ui->show_hotzones =((ev->x / (double) ui->width) > 0.67 && (ev->y / (double) ui->height) < .11);
 			break;
 	}
 
